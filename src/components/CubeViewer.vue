@@ -1,10 +1,12 @@
 <template>
-  <div class="p-4">
-    <h1 class="font-bold">
-      <span v-if="title">{{ title }}</span>
-      <span v-else class="text-gray-500">Untitled</span>
-    </h1>
-    <span class="text-sm">{{ cube.term.value }}</span>
+  <div class="p-4 flex flex-col gap-4">
+    <header>
+      <h1 class="font-bold">
+        <span v-if="title">{{ title }}</span>
+        <span v-else class="text-gray-500">Untitled</span>
+      </h1>
+      <span class="text-sm">{{ cube.term.value }}</span>
+    </header>
 
     <table>
       <thead>
@@ -15,8 +17,8 @@
         </tr>
       </thead>
       <tbody v-if="observations.isLoading">
-        <tr>
-          <td :colspan="cube.dimensions.length">
+        <tr v-for="i in Array(pageSize)" :key="i">
+          <td :colspan="cube.dimensions.length" class="border px-4 py-2">
             <loading-icon />
           </td>
         </tr>
@@ -29,6 +31,11 @@
         </tr>
       </tbody>
     </table>
+
+    <pagination-menu
+      v-model:page="page"
+      v-model:pageSize="pageSize"
+    />
   </div>
 </template>
 
@@ -39,14 +46,16 @@ import { Cube } from 'rdf-cube-view-query/lib/Cube'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
+import PaginationMenu from './PaginationMenu.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 
 const language = ['en', 'de', '*']
+const defaultPageSize = 10
 
 export default defineComponent({
   name: 'CubeViewer',
-  components: { DimensionHeader, LoadingIcon, ObservationValue },
+  components: { DimensionHeader, LoadingIcon, ObservationValue, PaginationMenu },
   props: {
     source: {
       type: Source,
@@ -59,20 +68,22 @@ export default defineComponent({
   },
 
   setup (props) {
+    const page = ref(1)
+    const pageSize = ref(defaultPageSize)
+
     const { source, cube } = toRefs(props)
     const cubeSource = computed(() => CubeSource.fromSource(source.value, cube.value))
     const cubeView = computed(() => {
-      const pageSize = 10
-      const offset = 0
       const view = View.fromCube(cube.value)
 
       view.ptr.addOut(ns.view.projection, projection => {
+        const offset = (page.value - 1) * pageSize.value
         const order = projection.blankNode()
           .addOut(ns.view.dimension, view.dimensions[0].ptr)
           .addOut(ns.view.direction, ns.view.Ascending)
 
         projection.addList(ns.view.orderBy, order)
-        projection.addOut(ns.view.limit, pageSize)
+        projection.addOut(ns.view.limit, pageSize.value)
         projection.addOut(ns.view.offset, offset)
       })
 
@@ -81,6 +92,8 @@ export default defineComponent({
 
     const observations = ref(Remote.loading())
     const fetchObservations = async () => {
+      observations.value = Remote.loading()
+
       const observationsData = await cubeView.value.observations()
       console.log(observationsData)
       observations.value = Remote.loaded(observationsData)
@@ -89,6 +102,8 @@ export default defineComponent({
     watch(cubeView, fetchObservations)
 
     return {
+      page,
+      pageSize,
       cubeSource,
       cubeView,
       language,

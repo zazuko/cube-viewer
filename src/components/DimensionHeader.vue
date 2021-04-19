@@ -8,7 +8,7 @@
 <script>
 import { defineComponent } from 'vue'
 import { CubeDimension } from 'rdf-cube-view-query'
-import { sh } from '../namespace'
+import * as ns from '../namespace'
 
 export default defineComponent({
   name: 'DimensionHeader',
@@ -25,7 +25,7 @@ export default defineComponent({
 
   computed: {
     label () {
-      return this.dimension.out(sh.name, { language: this.language }).value
+      return this.dimension.out(ns.schema.name, { language: this.language }).value
     },
   },
 })

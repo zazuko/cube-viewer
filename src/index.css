@@ -24,4 +24,21 @@
     select {
         @apply border-gray-300 rounded;
     }
+
+    [disabled] {
+        @apply opacity-50 pointer-events-none;
+    }
+}
+
+@layer components {
+    .button {
+        @apply
+            border
+            border-gray-300
+            rounded
+            px-4 py-2
+            hover:bg-gray-50
+            active:bg-gray-100 active:shadow-inner
+        ;
+    }
 }
