@@ -11,9 +11,13 @@
     <table>
       <thead>
         <tr>
-          <th v-for="dimension in cube.dimensions" :key="dimension.ptr.term.value">
-            <dimension-header :dimension="dimension" :language="language" />
-          </th>
+          <dimension-header
+            v-for="dimension in cube.dimensions"
+            :key="dimension.ptr.term.value"
+            :dimension="dimension"
+            :language="language"
+            class="px-4 py-2"
+          />
         </tr>
       </thead>
       <tbody v-if="observations.isLoading">
