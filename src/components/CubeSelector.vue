@@ -12,8 +12,7 @@
 
 <script>
 import { defineComponent, onMounted, ref, toRefs, watch } from 'vue'
-import { Source } from 'rdf-cube-view-query'
-import { Cube } from 'rdf-cube-view-query/lib/Cube'
+import { Cube, Source } from 'rdf-cube-view-query'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import * as Remote from '../remote'
 
@@ -33,7 +32,11 @@ export default defineComponent({
     const { source } = toRefs(props)
     const cubes = ref(Remote.loading())
     const fetchCubes = async () => {
-      const cubesData = await source.value.cubes()
+      const cubesData = await source.value.cubes({
+        filters: [
+          Cube.filter.noValidThrough(),
+        ],
+      })
       cubes.value = Remote.loaded(cubesData)
     }
     onMounted(fetchCubes)

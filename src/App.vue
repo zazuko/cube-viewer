@@ -1,7 +1,7 @@
 <template>
-  <div>
-    <cube-selector :source="source" :cube="cube" @select="selectCube" />
-    <cube-viewer v-if="cube" :source="source" :cube="cube" />
+  <div class="w-full h-full p-4">
+    <cube-selector :source="source" :cube="cube" @select="selectCube" class="mb-4" />
+    <cube-viewer v-if="cube" :source="source" :cube="cube" class="bg-white rounded shadow-lg overflow-x-scroll" />
   </div>
 </template>
 
