@@ -13,6 +13,7 @@
     "vue": "^3.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss7-compat": "^2.1.0",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-plugin-unit-mocha": "~4.5.0",
@@ -20,6 +21,7 @@
     "@vue/compiler-sfc": "^3.0.0",
     "@vue/eslint-config-standard": "^5.1.2",
     "@vue/test-utils": "^2.0.0-0",
+    "autoprefixer": "^9.8.6",
     "babel-eslint": "^10.1.0",
     "chai": "^4.1.2",
     "eslint": "^6.7.2",
@@ -27,7 +29,9 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
-    "eslint-plugin-vue": "^7.0.0"
+    "eslint-plugin-vue": "^7.0.0",
+    "postcss": "^7.0.35",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.0"
   },
   "eslintConfig": {
     "root": true,
@@ -42,13 +46,16 @@
       "parser": "babel-eslint"
     },
     "rules": {
-      "comma-dangle": ["error", {
-        "arrays": "always-multiline",
-        "objects": "always-multiline",
-        "imports": "never",
-        "exports": "never",
-        "functions": "never"
-      }]
+      "comma-dangle": [
+        "error",
+        {
+          "arrays": "always-multiline",
+          "objects": "always-multiline",
+          "imports": "never",
+          "exports": "never",
+          "functions": "never"
+        }
+      ]
     },
     "overrides": [
       {
