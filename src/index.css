@@ -41,4 +41,8 @@
             active:bg-gray-100 active:shadow-inner
         ;
     }
+
+    .tag {
+        @apply rounded-full px-2 py-1 bg-gray-300;
+    }
 }

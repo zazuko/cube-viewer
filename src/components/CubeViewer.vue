@@ -16,20 +16,20 @@
             :key="dimension.ptr.term.value"
             :dimension="dimension"
             :language="language"
-            class="px-4 py-2"
+            class="px-2 py-1 border border-b-2 align-top text-left"
           />
         </tr>
       </thead>
       <tbody v-if="observations.isLoading">
         <tr v-for="i in Array(pageSize)" :key="i">
-          <td :colspan="cube.dimensions.length" class="border px-4 py-2">
+          <td :colspan="cube.dimensions.length" class="border px-2 py-1">
             <loading-icon />
           </td>
         </tr>
       </tbody>
       <tbody v-else>
         <tr v-for="(observation, index) in observations.data" :key="index">
-          <td v-for="dimension in cube.dimensions" :key="dimension.ptr.term.value" class="border px-4 py-2">
+          <td v-for="dimension in cube.dimensions" :key="dimension.ptr.term.value" class="border px-2 py-1">
             <observation-value :value="observation[dimension.path.value]" :dimension="dimension" />
           </td>
         </tr>
@@ -99,7 +99,6 @@ export default defineComponent({
       observations.value = Remote.loading()
 
       const observationsData = await cubeView.value.observations()
-      console.log(observationsData)
       observations.value = Remote.loaded(observationsData)
     }
     onMounted(fetchObservations)
