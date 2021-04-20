@@ -30,6 +30,13 @@
           </td>
         </tr>
       </tbody>
+      <tbody v-else-if="observations.error">
+        <tr>
+          <td :colspan="cube.dimensions.length" class="border px-2 py-1">
+            {{ observations.error }}
+          </td>
+        </tr>
+      </tbody>
       <tbody v-else>
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
@@ -116,8 +123,12 @@ export default defineComponent({
     const fetchObservations = async () => {
       observations.value = Remote.loading()
 
-      const observationsData = await cubeView.value.observations()
-      observations.value = Remote.loaded(observationsData)
+      try {
+        const observationsData = await cubeView.value.observations()
+        observations.value = Remote.loaded(observationsData)
+      } catch (e) {
+        observations.value = Remote.error(e)
+      }
     }
     onMounted(fetchObservations)
     watch(cubeView, fetchObservations)
