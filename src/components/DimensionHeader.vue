@@ -5,7 +5,7 @@
       'font-normal': !(isMeasure || isKey),
     }"
   >
-    <p class="mb-1">
+    <p class="mb-1" :title="property">
       <span v-if="label">{{ label }}</span>
       <span v-else class="text-gray-500">Untitled</span>
     </p>
@@ -52,6 +52,10 @@ export default defineComponent({
 
     description () {
       return this.dimension.out(ns.schema.comment, { language: this.language }).value
+    },
+
+    property () {
+      return this.dimension.out(ns.sh.path).value
     },
 
     isMeasure () {
