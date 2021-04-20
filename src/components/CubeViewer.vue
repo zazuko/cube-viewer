@@ -29,7 +29,12 @@
       </tbody>
       <tbody v-else>
         <tr v-for="(observation, index) in observations.data" :key="index">
-          <td v-for="dimension in cube.dimensions" :key="dimension.ptr.term.value" class="border px-2 py-1">
+          <td
+            v-for="dimension in cube.dimensions"
+            :key="dimension.ptr.term.value"
+            class="border px-2 py-1"
+            :class="{ 'text-right tabular-nums': isNumericScale(dimension) }"
+          >
             <observation-value :value="observation[dimension.path.value]" :dimension="dimension" />
           </td>
         </tr>
@@ -118,6 +123,14 @@ export default defineComponent({
     title () {
       const title = this.cube.out(ns.schema.name, { language: this.language }).value
       return title ?? null
+    },
+  },
+
+  methods: {
+    isNumericScale (dimension) {
+      const scaleType = dimension.out(ns.qudt.scaleType).term
+
+      return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
     },
   },
 })
