@@ -16,6 +16,9 @@
             :key="dimension.ptr.term.value"
             :dimension="dimension"
             :language="language"
+            :sort-dimension="sortDimension"
+            :sort-direction="sortDirection"
+            @updateSort="updateSort"
             class="px-2 py-1 border border-b-2 align-top text-left"
           />
         </tr>
@@ -80,6 +83,9 @@ export default defineComponent({
     const page = ref(1)
     const pageSize = ref(defaultPageSize)
 
+    const sortDimension = ref(null)
+    const sortDirection = ref(ns.view.Ascending)
+
     const { source, cube } = toRefs(props)
     const cubeSource = computed(() => CubeSource.fromSource(source.value, cube.value))
     const cubeView = computed(() => {
@@ -87,13 +93,21 @@ export default defineComponent({
 
       view.ptr.addOut(ns.view.projection, projection => {
         const offset = (page.value - 1) * pageSize.value
-        const order = projection.blankNode()
-          .addOut(ns.view.dimension, view.dimensions[0].ptr)
-          .addOut(ns.view.direction, ns.view.Ascending)
 
-        projection.addList(ns.view.orderBy, order)
         projection.addOut(ns.view.limit, pageSize.value)
         projection.addOut(ns.view.offset, offset)
+
+        if (sortDimension.value) {
+          // TODO: `view.dimension` is buggy so I rewrote it below
+          // const orderDimension = view.dimension({ cubeDimension: sortDimension.value })
+          const orderDimension = view.dimensions.find((dimension) =>
+            dimension.cubeDimensions.some(cubeDimension => cubeDimension.path.equals(sortDimension.value.path)))
+
+          const order = projection.blankNode()
+            .addOut(ns.view.dimension, orderDimension.ptr)
+            .addOut(ns.view.direction, sortDirection.value)
+          projection.addList(ns.view.orderBy, order)
+        }
       })
 
       return view
@@ -112,6 +126,8 @@ export default defineComponent({
     return {
       page,
       pageSize,
+      sortDimension,
+      sortDirection,
       cubeSource,
       cubeView,
       language,
@@ -131,6 +147,11 @@ export default defineComponent({
       const scaleType = dimension.out(ns.qudt.scaleType).term
 
       return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
+    },
+
+    updateSort (dimension, direction) {
+      this.sortDimension = dimension
+      this.sortDirection = direction
     },
   },
 })
