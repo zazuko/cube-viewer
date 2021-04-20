@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, toRefs, onMounted, watch } from 'vue'
+import { defineAsyncComponent, defineComponent, ref, toRefs, onMounted, watch } from 'vue'
 import { Term } from '@rdfjs/data-model'
 import fetchRDF from '@rdfjs/fetch'
 import TermSet from '@rdfjs/term-set'
@@ -35,13 +35,17 @@ import clownface from 'clownface'
 import { Cube } from 'rdf-cube-view-query'
 import ExternalLinkIcon from './icons/ExternalLinkIcon.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
-import ObservationValue from './ObservationValue.vue'
 import TermDisplay from './TermDisplay.vue'
 import * as Remote from '../remote'
 
 export default defineComponent({
   name: 'ResourceDetails',
-  components: { ExternalLinkIcon, LoadingIcon, ObservationValue, TermDisplay },
+  components: {
+    ExternalLinkIcon,
+    LoadingIcon,
+    ObservationValue: defineAsyncComponent(() => import('./ObservationValue.vue')),
+    TermDisplay,
+  },
   props: {
     uri: {
       type: Term,
