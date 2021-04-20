@@ -38,7 +38,7 @@
             class="border px-2 py-1"
             :class="{ 'text-right tabular-nums': isNumericScale(dimension) }"
           >
-            <observation-value :value="observation[dimension.path.value]" :dimension="dimension" :cube="cube" />
+            <observation-value :value="observation[dimension.path.value]" :cube="cube" />
           </td>
         </tr>
       </tbody>

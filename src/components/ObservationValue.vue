@@ -1,27 +1,30 @@
 <template>
-  <span v-if="isLiteral" :title="valueExpanded">
-    {{ value?.value }}
-  </span>
-  <span v-else :title="value?.value" class="tag bg-gray-200 whitespace-nowrap">
-    {{ valueShrunk }}
-  </span>
+  <span v-if="!value">-</span>
+  <term-display v-else-if="value.termType === 'Literal'" :term="value" :base="cube.term.value" />
+  <popover v-else class="relative">
+    <popover-button class="tag bg-gray-200 whitespace-nowrap">
+      <term-display :term="value" :base="cube.term.value" />
+    </popover-button>
+    <popover-panel class="absolute z-10 bg-white border border-gray-300 rounded shadow-lg p-4">
+      <resource-details :uri="value" :cube="cube" />
+    </popover-panel>
+  </popover>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
 import { Term } from '@rdfjs/data-model'
-import { Cube, CubeDimension } from 'rdf-cube-view-query'
-import * as ns from '../namespace'
+import { Cube } from 'rdf-cube-view-query'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
+import ResourceDetails from './ResourceDetails.vue'
+import TermDisplay from './TermDisplay.vue'
 
 export default defineComponent({
   name: 'ObservationValue',
+  components: { Popover, PopoverButton, PopoverPanel, ResourceDetails, TermDisplay },
   props: {
     value: {
       type: Term,
-      required: true,
-    },
-    dimension: {
-      type: CubeDimension,
       required: true,
     },
     cube: {
@@ -33,21 +36,6 @@ export default defineComponent({
   computed: {
     isLiteral () {
       return this.value && this.value.termType === 'Literal'
-    },
-
-    valueExpanded () {
-      if (!this.value) return ''
-
-      const datatype = this.value.datatype ? `^^${ns.shrink(this.value.datatype.value)}` : ''
-      const language = this.value.language ? `@${this.value.language}` : ''
-
-      return `"${this.value.value}${language}"${datatype}`
-    },
-
-    valueShrunk () {
-      if (!this.value) return ''
-
-      return ns.shrink(this.value.value, this.cube.term.value)
     },
   },
 })

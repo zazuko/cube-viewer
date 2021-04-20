@@ -25,6 +25,10 @@
     @apply border-gray-300 rounded;
   }
 
+  a {
+    @apply text-primary-500 hover:underline;
+  }
+
   [disabled] {
     @apply opacity-50 pointer-events-none;
   }
