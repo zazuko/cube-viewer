@@ -3,46 +3,46 @@
 @tailwind utilities;
 
 @layer base {
-    html {
-        font-size: 14px;
-    }
+  html {
+    font-size: 14px;
+  }
 
-    [type='text'],
-    [type='email'],
-    [type='url'],
-    [type='password'],
-    [type='number'],
-    [type='date'],
-    [type='datetime-local'],
-    [type='month'],
-    [type='search'],
-    [type='tel'],
-    [type='time'],
-    [type='week'],
-    [multiple],
-    textarea,
-    select {
-        @apply border-gray-300 rounded;
-    }
+  [type='text'],
+  [type='email'],
+  [type='url'],
+  [type='password'],
+  [type='number'],
+  [type='date'],
+  [type='datetime-local'],
+  [type='month'],
+  [type='search'],
+  [type='tel'],
+  [type='time'],
+  [type='week'],
+  [multiple],
+  textarea,
+  select {
+    @apply border-gray-300 rounded;
+  }
 
-    [disabled] {
-        @apply opacity-50 pointer-events-none;
-    }
+  [disabled] {
+    @apply opacity-50 pointer-events-none;
+  }
 }
 
 @layer components {
-    .button {
-        @apply
-            border
-            border-gray-300
-            rounded
-            px-4 py-2
-            hover:bg-gray-50
-            active:bg-gray-100 active:shadow-inner
-        ;
-    }
+  .button {
+    @apply
+      border
+      border-gray-300
+      rounded
+      px-4 py-2
+      hover:bg-gray-50
+      active:bg-gray-100 active:shadow-inner
+    ;
+  }
 
-    .tag {
-        @apply rounded-full px-2 py-1 bg-gray-300;
-    }
+  .tag {
+    @apply rounded-full px-2 py-1 bg-gray-300;
+  }
 }
