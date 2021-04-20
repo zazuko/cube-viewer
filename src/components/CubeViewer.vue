@@ -98,14 +98,13 @@ export default defineComponent({
         projection.addOut(ns.view.offset, offset)
 
         if (sortDimension.value) {
-          // TODO: `view.dimension` is buggy so I rewrote it below
-          // const orderDimension = view.dimension({ cubeDimension: sortDimension.value })
-          const orderDimension = view.dimensions.find((dimension) =>
-            dimension.cubeDimensions.some(cubeDimension => cubeDimension.path.equals(sortDimension.value.path)))
-
+          // Passing `path` because there's a bug in the library that doesn't
+          // handle dimension comparison properly
+          const orderDimension = view.dimension({ cubeDimension: sortDimension.value.path })
           const order = projection.blankNode()
             .addOut(ns.view.dimension, orderDimension.ptr)
             .addOut(ns.view.direction, sortDirection.value)
+
           projection.addList(ns.view.orderBy, order)
         }
       })
