@@ -37,7 +37,7 @@
       </thead>
       <tbody v-if="observations.isLoading">
         <tr v-for="i in Array(pageSize)" :key="i">
-          <td :colspan="cube.dimensions.length" class="border px-2 py-1">
+          <td :colspan="cube.dimensions.length" class="border px-2 py-2">
             <loading-icon />
           </td>
         </tr>
