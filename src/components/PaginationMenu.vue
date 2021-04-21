@@ -1,11 +1,14 @@
 <template>
-  <div class="flex items-center gap-6">
-    <div class="flex items-center gap-4">
-      <button @click="$emit('update:page', page - 1)" title="Previous" class="button px-2" :disabled="page === 1">
+  <div class="flex items-center gap-4">
+    <div class="flex items-center gap-1">
+      <button @click="updatePage(1)" title="First page" class="button px-2" :disabled="page === 1">
+        <chevron-double-left-icon />
+      </button>
+      <button @click="updatePage(page - 1)" title="Previous page" class="button px-2" :disabled="page === 1">
         <chevron-left-icon />
       </button>
-      {{ page }}
-      <button @click="$emit('update:page', page + 1)" title="Next" class="button px-2">
+      <input type="text" inputmode="numeric" :value="page" @change="updatePage($event.target.value)" class="w-14 text-right" />
+      <button @click="updatePage(page + 1)" title="Next page" class="button px-2">
         <chevron-right-icon />
       </button>
     </div>
@@ -18,6 +21,7 @@
 
 <script>
 import { defineComponent } from 'vue'
+import ChevronDoubleLeftIcon from './icons/ChevronDoubleLeftIcon.vue'
 import ChevronLeftIcon from './icons/ChevronLeftIcon.vue'
 import ChevronRightIcon from './icons/ChevronRightIcon.vue'
 
@@ -25,7 +29,7 @@ const pageSizes = ['10', '20', '50', '100']
 
 export default defineComponent({
   name: 'PaginationMenu',
-  components: { ChevronLeftIcon, ChevronRightIcon },
+  components: { ChevronDoubleLeftIcon, ChevronLeftIcon, ChevronRightIcon },
   props: {
     page: {
       type: Number,
@@ -42,6 +46,16 @@ export default defineComponent({
     return {
       pageSizes,
     }
+  },
+
+  methods: {
+    updatePage (number) {
+      const page = Number(number)
+
+      if (!isNaN(page)) {
+        this.$emit('update:page', page)
+      }
+    },
   },
 })
 </script>
