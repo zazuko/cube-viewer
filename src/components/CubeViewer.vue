@@ -193,7 +193,7 @@ export default defineComponent({
           return {
             dimensionPath,
             index,
-            label: `${dimensionLabel} ${operation.label} ${arg.value}`,
+            label: `${dimensionLabel} ${operation.label} ${ns.shrink(arg.value, this.cube.term.value)}`,
           }
         })
       )
