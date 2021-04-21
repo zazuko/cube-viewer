@@ -1,16 +1,18 @@
 <template>
-  <form @submit.prevent="submit" class="flex flex-col gap-2 items-start">
-    <dimension-filter
-      v-for="(filter, index) in filtersData"
-      :key="index"
-      :dimension="dimension"
-      v-model:filter="filter.value"
-    />
-    <button type="button" @click="addFilter" class="button">
-      <plus-icon />
-      Add filter
-    </button>
-    <button type="submit" class="button-primary">
+  <form @submit.prevent="submit" class="">
+    <div class="mb-4 flex flex-col gap-2">
+      <dimension-filter
+        v-for="(filter, index) in filtersData"
+        :key="index"
+        :dimension="dimension"
+        v-model:filter="filter.value"
+      />
+      <button type="button" @click="addFilter" class="button-text justify-end">
+        <plus-icon />
+        Add filter
+      </button>
+    </div>
+    <button type="submit" class="button-primary self-end">
       Apply filters
     </button>
   </form>

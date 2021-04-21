@@ -22,7 +22,11 @@
   [multiple],
   textarea,
   select {
-    @apply border-gray-300 rounded;
+    @apply border-gray-300 rounded px-3 py-1;
+  }
+
+  select {
+    @apply pr-8;
   }
 
   a {
@@ -51,10 +55,15 @@
   .button-primary {
     @apply
       button
+      border-primary-300
       bg-primary-300
       hover:bg-primary-400
       active:bg-primary-500
     ;
+  }
+
+  .button-text {
+    @apply button uppercase font-bold text-gray-500 text-sm border-none px-0;
   }
 
   .tag {
