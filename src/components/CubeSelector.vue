@@ -3,7 +3,11 @@
     <loading-icon />
     Loading cubes...
   </div>
+  <div v-else-if="cubes.error" class="p-2 text-red-500">
+    {{ cubes.error }}
+  </div>
   <select v-else :value="cube?.term.value" @change="onSelect">
+    <option>Select cube</option>
     <option v-for="cube in cubes.data" :key="cube.term.value" :value="cube.term.value">
       {{ cube.term.value }}
     </option>
@@ -32,12 +36,16 @@ export default defineComponent({
     const { source } = toRefs(props)
     const cubes = ref(Remote.loading())
     const fetchCubes = async () => {
-      const cubesData = await source.value.cubes({
-        filters: [
-          Cube.filter.noValidThrough(),
-        ],
-      })
-      cubes.value = Remote.loaded(cubesData)
+      try {
+        const cubesData = await source.value.cubes({
+          filters: [
+            Cube.filter.noValidThrough(),
+          ],
+        })
+        cubes.value = Remote.loaded(cubesData)
+      } catch (e) {
+        cubes.value = Remote.error(e)
+      }
     }
     onMounted(fetchCubes)
     watch(source, fetchCubes)

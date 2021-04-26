@@ -1,38 +1,23 @@
 <template>
-  <div class="w-full h-full p-4">
-    <cube-selector :source="source" :cube="cube" @select="selectCube" class="mb-4" />
+  <div class="w-full h-full p-4 flex flex-col gap-4">
+    <source-config v-model:source="source" v-model:cube="cube" />
     <cube-viewer v-if="cube" :source="source" :cube="cube" class="bg-white rounded shadow-lg overflow-x-auto" />
   </div>
 </template>
 
 <script>
-import CubeSelector from './components/CubeSelector.vue'
 import CubeViewer from './components/CubeViewer.vue'
-import { Source } from 'rdf-cube-view-query'
+import SourceConfig from './components/SourceConfig.vue'
 
 export default {
   name: 'App',
-  components: { CubeSelector, CubeViewer },
+  components: { CubeViewer, SourceConfig },
 
   data () {
     return {
-      sourceOptions: {
-        endpointUrl: 'https://test.lindas.admin.ch/query/',
-      },
+      source: null,
       cube: null,
     }
-  },
-
-  computed: {
-    source () {
-      return new Source(this.sourceOptions)
-    },
-  },
-
-  methods: {
-    selectCube (cube) {
-      this.cube = cube
-    },
   },
 }
 </script>

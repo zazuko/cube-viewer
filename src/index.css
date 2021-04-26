@@ -69,4 +69,12 @@
   .tag {
     @apply rounded-full px-2 py-1 bg-gray-200;
   }
+
+  .form-field {
+    @apply flex flex-col;
+  }
+
+  .label {
+    @apply text-sm;
+  }
 }
