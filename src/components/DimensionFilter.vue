@@ -1,21 +1,27 @@
 <template>
   <fieldset class="flex items-center gap-2">
-    <select :value="filter.operation?.term.value" @change="updateOperation">
-      <option v-for="operation in operations" :key="operation.term.value" :value="operation.term.value">
-        {{ operation.label }}
-      </option>
-    </select>
-    <select :value="filter.arg?.value" @change="updateArg">
-      <option v-for="(option, index) in dimension.in" :key="index" :value="option.value">
+    <SelectBox :modelValue="filter.operation" @update:modelValue="updateOperation" :options="operations">
+      <template v-slot:button="{ selected }">
+        <span v-if="selected" :term="selected.term">{{ selected.label }}</span>
+        <span v-else class="text-gray-500">Operation</span>
+      </template>
+    </SelectBox>
+    <SelectBox :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
+      <template v-slot:button="{ selected }">
+        <term-display v-if="selected" :term="selected" />
+        <span v-else class="text-gray-500">Value</span>
+      </template>
+      <template v-slot:option="{ option }">
         <term-display :term="option" />
-      </option>
-    </select>
+      </template>
+    </SelectBox>
   </fieldset>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
 import { CubeDimension } from 'rdf-cube-view-query'
+import SelectBox from './SelectBox.vue'
 import TermDisplay from './TermDisplay.vue'
 import * as ns from '../namespace'
 
@@ -31,7 +37,7 @@ const operations = [
 
 export default defineComponent({
   name: 'DimensionFilters',
-  components: { TermDisplay },
+  components: { SelectBox, TermDisplay },
   props: {
     dimension: {
       type: CubeDimension,
@@ -52,13 +58,11 @@ export default defineComponent({
   },
 
   methods: {
-    updateOperation (event) {
-      const operation = operations.find(({ term }) => term.value === event.target.value)
+    updateOperation (operation) {
       this.$emit('update:filter', { ...this.filter, operation })
     },
 
-    updateArg (event) {
-      const arg = this.dimension.in.find((term) => term.value === event.target.value)
+    updateArg (arg) {
       this.$emit('update:filter', { ...this.filter, arg })
     },
   },
