@@ -1,6 +1,6 @@
 <template>
     <Listbox :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)" as="div" class="relative">
-      <ListboxButton class="button pr-2">
+      <ListboxButton class="button hover:bg-white pr-2">
         <slot name="button" :selected="modelValue">
           <span v-if="modelValue">{{ modelValue?.label }}</span>
           <span v-else class="text-gray-500">Select</span>
