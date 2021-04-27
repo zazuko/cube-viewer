@@ -33,6 +33,14 @@
         <cog-icon />
         Endpoint config
       </button>
+      <select-box :options="languages" :model-value="language[0]" @update:model-value="updateLanguage">
+        <template v-slot:button="{ selected }">
+          {{ selected }}
+        </template>
+        <template v-slot:option="{ option }">
+          {{ option }}
+        </template>
+      </select-box>
     </div>
   </div>
 </template>
@@ -42,10 +50,13 @@ import { defineComponent, ref, toRefs } from 'vue'
 import { Cube, Source } from 'rdf-cube-view-query'
 import CogIcon from './icons/CogIcon.vue'
 import CubeSelector from './CubeSelector.vue'
+import SelectBox from './SelectBox.vue'
+
+const languages = ['de', 'fr', 'it', 'rm', 'en']
 
 export default defineComponent({
   name: 'SourceConfig',
-  components: { CogIcon, CubeSelector },
+  components: { CogIcon, CubeSelector, SelectBox },
   props: {
     source: {
       type: Source,
@@ -55,8 +66,12 @@ export default defineComponent({
       type: Cube,
       required: false,
     },
+    language: {
+      type: [Array, String],
+      required: false,
+    },
   },
-  emits: ['update:source', 'update:cube'],
+  emits: ['update:source', 'update:cube', 'update:language'],
 
   setup (props) {
     const { source } = toRefs(props)
@@ -71,6 +86,7 @@ export default defineComponent({
     return {
       options,
       open,
+      languages,
     }
   },
 
@@ -87,6 +103,11 @@ export default defineComponent({
       const source = new Source(this.options)
       this.$emit('update:source', source)
       this.open = false
+    },
+
+    updateLanguage (language) {
+      const languageList = [language, ...languages, '*']
+      this.$emit('update:language', languageList)
     },
   },
 })

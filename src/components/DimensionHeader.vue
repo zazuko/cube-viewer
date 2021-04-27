@@ -76,7 +76,7 @@ export default defineComponent({
       required: true,
     },
     language: {
-      type: Array,
+      type: [Array, String],
       required: true,
     },
     sortDimension: {

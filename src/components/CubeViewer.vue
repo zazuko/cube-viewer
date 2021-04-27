@@ -17,7 +17,7 @@
             v-for="dimension in cube.dimensions"
             :key="dimension.ptr.term.value"
             :dimension="dimension"
-            :language="language"
+            :language="displayLanguage"
             :sort-dimension="sortDimension"
             :sort-direction="sortDirection"
             :filters="filters.get(dimension.path.value)"
@@ -84,7 +84,7 @@ import XCircleIcon from './icons/XCircleIcon.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 
-const language = ['en', 'de', '*']
+const defaultLanguage = '*'
 const defaultPageSize = 10
 
 export default defineComponent({
@@ -98,6 +98,10 @@ export default defineComponent({
     cube: {
       type: Cube,
       required: true,
+    },
+    language: {
+      type: [String, Array],
+      required: false,
     },
   },
 
@@ -181,26 +185,29 @@ export default defineComponent({
       filters,
       cubeSource,
       cubeView,
-      language,
       observations,
     }
   },
 
   computed: {
+    displayLanguage () {
+      return this.language ?? defaultLanguage
+    },
+
     title () {
-      const title = this.cube.out(ns.schema.name, { language: this.language }).value
+      const title = this.cube.out(ns.schema.name, { language: this.displayLanguage }).value
       return title ?? null
     },
 
     description () {
-      const description = this.cube.out(ns.schema.description, { language: this.language }).value
+      const description = this.cube.out(ns.schema.description, { language: this.displayLanguage }).value
       return description ?? null
     },
 
     filtersSummary () {
       return [...this.filters.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
         dimensionFilters.map(({ dimension, operation, arg }, index) => {
-          const dimensionLabel = dimension.out(ns.schema.name, { language: this.language }).value
+          const dimensionLabel = dimension.out(ns.schema.name, { language: this.displayLanguage }).value
 
           return {
             dimensionPath,

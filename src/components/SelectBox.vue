@@ -7,7 +7,7 @@
         </slot>
         <chevron-down-icon class="text-gray-500" />
       </ListboxButton>
-      <ListboxOptions class="absolute min-w-full border rounded-md shadow-md bg-white max-h-80 overflow-y-auto outline-none">
+      <ListboxOptions class="absolute z-10 min-w-full border rounded-md shadow-md bg-white max-h-80 overflow-y-auto outline-none">
         <ListboxOption
           v-for="(option, index) in options"
           :key="index"
