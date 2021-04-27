@@ -57,7 +57,10 @@
             v-for="dimension in cube.dimensions"
             :key="dimension.ptr.term.value"
             class="border px-2 py-1"
-            :class="{ 'text-right tabular-nums': isNumericScale(dimension) }"
+            :class="{
+              'text-right tabular-nums': isNumericScale(dimension),
+              'bg-primary-50': isMeasureDimension(dimension),
+            }"
           >
             <observation-value :value="observation[dimension.path.value]" :cube="cube" />
           </td>
@@ -224,6 +227,10 @@ export default defineComponent({
       const scaleType = dimension.out(ns.qudt.scaleType).term
 
       return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
+    },
+
+    isMeasureDimension (dimension) {
+      return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
     },
 
     updateSort (dimension, direction) {

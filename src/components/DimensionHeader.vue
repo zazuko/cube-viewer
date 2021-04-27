@@ -1,5 +1,5 @@
 <template>
-  <th :class="{'bg-primary-100': isMeasure}">
+  <th :class="{'bg-primary-50': isMeasure}">
     <p class="mb-2 flex items-center justify-between">
       <button
         class="flex items-center"
