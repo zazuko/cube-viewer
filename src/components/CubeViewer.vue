@@ -1,11 +1,13 @@
 <template>
   <div class="p-4 flex flex-col gap-4">
     <header>
-      <h1 class="font-bold">
+      <h1 class="font-bold mb-2" :title="cube.term.value">
         <span v-if="title">{{ title }}</span>
         <span v-else class="text-gray-500">Untitled</span>
       </h1>
-      <span class="text-sm">{{ cube.term.value }}</span>
+      <section v-if="description" class="text-sm text-gray-700">
+        {{ description }}
+      </section>
     </header>
 
     <table>
@@ -188,6 +190,11 @@ export default defineComponent({
     title () {
       const title = this.cube.out(ns.schema.name, { language: this.language }).value
       return title ?? null
+    },
+
+    description () {
+      const description = this.cube.out(ns.schema.description, { language: this.language }).value
+      return description ?? null
     },
 
     filtersSummary () {
