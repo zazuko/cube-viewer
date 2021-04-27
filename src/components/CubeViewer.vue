@@ -56,7 +56,7 @@
           <td
             v-for="dimension in cube.dimensions"
             :key="dimension.ptr.term.value"
-            class="border px-2 py-1"
+            class="border px-2 py-1 whitespace-nowrap"
             :class="{
               'text-right tabular-nums': isNumericScale(dimension),
               'bg-primary-50': isMeasureDimension(dimension),
