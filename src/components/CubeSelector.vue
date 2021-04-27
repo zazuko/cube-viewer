@@ -36,6 +36,8 @@ export default defineComponent({
     const { source } = toRefs(props)
     const cubes = ref(Remote.loading())
     const fetchCubes = async () => {
+      cubes.value = Remote.loading()
+
       try {
         const cubesData = await source.value.cubes({
           filters: [

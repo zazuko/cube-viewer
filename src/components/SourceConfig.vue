@@ -21,13 +21,17 @@
         <input type="text" v-model="options.sourceGraph" />
       </label>
 
-      <div>
+      <div class="flex justify-between">
         <button type="submit" class="button-primary" :disabled="!isValid">
           Fetch cubes
         </button>
+        <button type="button" class="button-text" title="Close" @click="open = false">
+          <x-circle-icon />
+        </button>
       </div>
     </form>
-    <div v-else class="flex items-end gap-2">
+
+    <div v-show="!open" class="flex items-end gap-2">
       <cube-selector v-if="source" :source="source" :cube="cube" @select="$emit('update:cube', $event)" />
       <button class="button" @click="open = true">
         <cog-icon />
@@ -49,6 +53,7 @@
 import { defineComponent, ref, toRefs } from 'vue'
 import { Cube, Source } from 'rdf-cube-view-query'
 import CogIcon from './icons/CogIcon.vue'
+import XCircleIcon from './icons/XCircleIcon.vue'
 import CubeSelector from './CubeSelector.vue'
 import SelectBox from './SelectBox.vue'
 
@@ -56,7 +61,7 @@ const languages = ['de', 'fr', 'it', 'rm', 'en']
 
 export default defineComponent({
   name: 'SourceConfig',
-  components: { CogIcon, CubeSelector, SelectBox },
+  components: { CogIcon, CubeSelector, SelectBox, XCircleIcon },
   props: {
     source: {
       type: Source,
