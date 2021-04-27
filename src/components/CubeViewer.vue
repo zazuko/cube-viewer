@@ -108,7 +108,12 @@ export default defineComponent({
     const sortDimension = ref(null)
     const sortDirection = ref(ns.view.Ascending)
 
-    const filters = ref(new Map(cube.value.dimensions.map(dimension => [dimension.path.value, []])))
+    const filters = ref(null)
+    const initFilters = () => {
+      filters.value = new Map(cube.value.dimensions.map(dimension => [dimension.path.value, []]))
+    }
+    initFilters()
+    watch(cube, initFilters)
 
     const cubeSource = computed(() => CubeSource.fromSource(source.value, cube.value))
     const cubeView = computed(() => {
