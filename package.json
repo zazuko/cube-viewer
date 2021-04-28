@@ -6,9 +6,17 @@
     "deploy": "./scripts/deploy.sh",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build-wc": "vue-cli-service build --target lib --formats umd,umd-min --inline-vue --name cube-viewer ./src/wc.js",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
+  "main": "dist/cube-viewer.umd.js",
+  "files": [
+    "/src",
+    "/dist/cube-viewer.css",
+    "/dist/cube-viewer.umd.js",
+    "/dist/cube-viewer.umd.min.js"
+  ],
   "dependencies": {
     "@headlessui/vue": "^1.1.0",
     "@rdfjs/fetch": "^2.1.0",
@@ -19,7 +27,8 @@
     "clownface": "^1.2.0",
     "core-js": "^3.11.0",
     "rdf-cube-view-query": "^1.3.1",
-    "vue": "^3.0.0"
+    "vue": "^3.0.0",
+    "vue3-webcomponent-wrapper": "^0.1.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss7-compat": "^2.1.0",
