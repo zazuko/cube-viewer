@@ -7,7 +7,7 @@
           </span>
           <span v-if="modelValue.length === 0" class="text-gray-500">Select</span>
         </slot>
-        <chevron-down-icon class="text-gray-500" />
+        <chevron-down-icon class="w-5 h-5 text-gray-500" />
       </ListboxButton>
       <ListboxOptions class="absolute min-w-full border rounded-md shadow-md bg-white max-h-80 overflow-y-auto outline-none">
         <ListboxOption
@@ -18,7 +18,7 @@
           v-slot="{ active }"
         >
           <button class="w-full p-2 flex items-center gap-1" :class="{ 'bg-blue-50': active }">
-            <CheckIcon :class="{ 'invisible': !isSelected(option) }" />
+            <check-icon class="w-5 h-5" :class="{ 'invisible': !isSelected(option) }" />
             <slot name="option" :option="option">{{ option.label }}</slot>
           </button>
         </ListboxOption>
@@ -29,8 +29,7 @@
 <script>
 import { defineComponent } from 'vue'
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue'
-import CheckIcon from './icons/CheckIcon.vue'
-import ChevronDownIcon from './icons/ChevronDownIcon.vue'
+import { CheckIcon, ChevronDownIcon } from '@heroicons/vue/solid'
 
 export default defineComponent({
   name: 'SelectBox',

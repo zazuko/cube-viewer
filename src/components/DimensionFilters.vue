@@ -8,7 +8,7 @@
         v-model:filter="filter.value"
       />
       <button type="button" @click="addFilter" class="button-text justify-end">
-        <plus-icon />
+        <plus-icon class="w-5 h-5" />
         Add filter
       </button>
     </div>
@@ -20,9 +20,9 @@
 
 <script>
 import { defineComponent, ref, toRefs } from 'vue'
+import { PlusIcon } from '@heroicons/vue/solid'
 import { CubeDimension } from 'rdf-cube-view-query'
 import DimensionFilter from './DimensionFilter.vue'
-import PlusIcon from './icons/PlusIcon.vue'
 
 export default defineComponent({
   name: 'DimensionFilters',

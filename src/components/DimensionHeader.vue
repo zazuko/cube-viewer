@@ -10,13 +10,13 @@
         <span v-if="label">{{ label }}</span>
         <span v-else class="text-gray-500">Untitled</span>
         <span v-if="isSortDimension" class="pt-1">
-          <chevron-down-icon v-if="isSortAscending" />
-          <chevron-up-icon v-if="isSortDescending" />
+          <chevron-down-icon v-if="isSortAscending" class="w-5 h-5" />
+          <chevron-up-icon v-if="isSortDescending" class="w-5 h-5" />
         </span>
       </button>
       <popover class="relative">
         <popover-button as="button">
-          <filter-icon :class="{ 'text-primary-500': filters.length > 0 }" />
+          <filter-icon class="w-5 h-5" :class="{ 'text-primary-500': filters.length > 0 }" />
         </popover-button>
         <popover-panel class="z-10 absolute bg-white border rounded shadow-md p-2">
           <dimension-filters
@@ -31,10 +31,10 @@
       <scale-type-icon :scale-of-measure="scaleType" />
       <data-kind-icon :data-kind="dataKind" />
       <span v-if="description" class="tag" :title="description">
-        <comment-icon />
+        <annotation-icon class="w-5 h-5" />
       </span>
       <span v-if="isShared" class="tag" title="Linked to shared dimension">
-        <link-icon />
+        <link-icon class="w-5 h-5" />
       </span>
     </p>
   </th>
@@ -45,22 +45,19 @@ import { defineComponent } from 'vue'
 import { CubeDimension } from 'rdf-cube-view-query'
 import { Term } from '@rdfjs/data-model'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
-import ChevronDownIcon from './icons/ChevronDownIcon.vue'
-import ChevronUpIcon from './icons/ChevronUpIcon.vue'
-import CommentIcon from './icons/CommentIcon.vue'
+import { AnnotationIcon, FilterIcon } from '@heroicons/vue/outline'
+import { ChevronDownIcon, ChevronUpIcon, LinkIcon } from '@heroicons/vue/solid'
 import DataKindIcon from './DataKindIcon.vue'
 import DimensionFilters from './DimensionFilters.vue'
-import FilterIcon from './icons/FilterIcon.vue'
-import LinkIcon from './icons/LinkIcon.vue'
 import ScaleTypeIcon from './ScaleTypeIcon.vue'
 import * as ns from '../namespace'
 
 export default defineComponent({
   name: 'DimensionHeader',
   components: {
+    AnnotationIcon,
     ChevronDownIcon,
     ChevronUpIcon,
-    CommentIcon,
     DataKindIcon,
     DimensionFilters,
     FilterIcon,

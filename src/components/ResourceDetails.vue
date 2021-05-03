@@ -3,7 +3,7 @@
     <h2 class="mb-4 whitespace-nowrap">
       <a :href="uri.value" target="_blank" rel="noopener" class="group flex items-center gap-1">
         {{ uri.value }}
-        <external-link-icon class="invisible group-hover:visible" />
+        <external-link-icon class="w-4 h-4 invisible group-hover:visible" />
       </a>
     </h2>
     <loading-icon v-if="resource.isLoading" />
@@ -28,12 +28,12 @@
 
 <script>
 import { defineAsyncComponent, defineComponent, ref, toRefs, onMounted, watch } from 'vue'
+import { ExternalLinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
 import fetchRDF from '@rdfjs/fetch'
 import TermSet from '@rdfjs/term-set'
 import clownface from 'clownface'
 import { Cube } from 'rdf-cube-view-query'
-import ExternalLinkIcon from './icons/ExternalLinkIcon.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import TermDisplay from './TermDisplay.vue'
 import * as Remote from '../remote'

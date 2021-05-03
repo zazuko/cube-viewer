@@ -63,7 +63,17 @@
   }
 
   .button-text {
-    @apply button uppercase font-bold text-gray-500 text-sm border-none px-0;
+    @apply
+      button
+      uppercase
+      font-bold
+      text-gray-500
+      hover:text-gray-800
+      bg-transparent
+      hover:bg-transparent
+      text-sm
+      border-none px-0
+    ;
   }
 
   .tag {

@@ -26,7 +26,7 @@
           Fetch cubes
         </button>
         <button type="button" class="button-text" title="Close" @click="open = false">
-          <x-circle-icon />
+          <x-circle-icon class="h-6 w-6" />
         </button>
       </div>
     </form>
@@ -34,7 +34,7 @@
     <div v-show="!open" class="flex items-end gap-2">
       <cube-selector v-if="source" :source="source" :cube="cube" @select="$emit('update:cube', $event)" />
       <button class="button" @click="open = true">
-        <cog-icon />
+        <cog-icon class="h-4 w-4" />
         Endpoint config
       </button>
       <select-box :options="languages" :model-value="language[0]" @update:model-value="updateLanguage">
@@ -52,8 +52,8 @@
 <script>
 import { defineComponent, ref, toRefs } from 'vue'
 import { Cube, Source } from 'rdf-cube-view-query'
-import CogIcon from './icons/CogIcon.vue'
-import XCircleIcon from './icons/XCircleIcon.vue'
+import { CogIcon } from '@heroicons/vue/solid'
+import { XCircleIcon } from '@heroicons/vue/outline'
 import CubeSelector from './CubeSelector.vue'
 import SelectBox from './SelectBox.vue'
 

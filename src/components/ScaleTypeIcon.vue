@@ -6,18 +6,15 @@
 
 <script>
 import { defineComponent } from 'vue'
-import BalanceIcon from './icons/BalanceIcon.vue'
-import ChartLineIcon from './icons/ChartLineIcon.vue'
-import QuestionMarkCircleIcon from './icons/QuestionMarkCircleIcon.vue'
-import ViewGridIcon from './icons/ViewGridIcon.vue'
-import ViewListIcon from './icons/ViewListIcon.vue'
+import { PresentationChartLineIcon, QuestionMarkCircleIcon, ScaleIcon, ViewListIcon } from '@heroicons/vue/outline'
+import { ViewGridIcon } from '@heroicons/vue/solid'
 import * as ns from '../namespace'
 
 const icons = {
   [ns.qudt.NominalScale.value]: ViewGridIcon,
   [ns.qudt.OrdinalScale.value]: ViewListIcon,
-  [ns.qudt.IntervalScale.value]: ChartLineIcon,
-  [ns.qudt.RatioScale.value]: BalanceIcon,
+  [ns.qudt.IntervalScale.value]: PresentationChartLineIcon,
+  [ns.qudt.RatioScale.value]: ScaleIcon,
 }
 
 export default defineComponent({

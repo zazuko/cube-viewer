@@ -6,10 +6,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import ClockIcon from './icons/ClockIcon.vue'
-import GeolocationIcon from './icons/GeolocationIcon.vue'
-import MapIcon from './icons/MapIcon.vue'
-import QuestionMarkCircleIcon from './icons/QuestionMarkCircleIcon.vue'
+import { ClockIcon, LocationMarkerIcon, MapIcon, QuestionMarkCircleIcon } from '@heroicons/vue/outline'
 import * as ns from '../namespace'
 
 const labels = {
@@ -20,7 +17,7 @@ const labels = {
 
 const icons = {
   [ns.time.GeneralDateTimeDescription.value]: ClockIcon,
-  [ns.schema.GeoCoordinates.value]: GeolocationIcon,
+  [ns.schema.GeoCoordinates.value]: LocationMarkerIcon,
   [ns.schema.GeoShape.value]: MapIcon,
 }
 

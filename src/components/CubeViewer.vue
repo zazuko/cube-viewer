@@ -31,7 +31,9 @@
             <div class="flex gap-2 justify-start">
               <span v-for="(filter, index) in filtersSummary" :key="index" class="tag bg-gray-100 rounded-md flex items-center gap-1">
                 <span>{{ filter.label }}</span>
-                <button title="Remove filter" @click="removeFilter(filter)"><x-circle-icon /></button>
+                <button title="Remove filter" @click="removeFilter(filter)" class="button-text">
+                  <x-circle-icon class="w-5 h-5" />
+                </button>
               </span>
             </div>
           </td>
@@ -77,13 +79,13 @@
 
 <script>
 import { computed, defineComponent, onMounted, ref, toRefs, watch } from 'vue'
+import { XCircleIcon } from '@heroicons/vue/outline'
 import { CubeSource, Filter, Source, View } from 'rdf-cube-view-query'
 import { Cube } from 'rdf-cube-view-query/lib/Cube'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
-import XCircleIcon from './icons/XCircleIcon.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 
