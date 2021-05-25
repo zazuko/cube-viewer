@@ -42,10 +42,12 @@ export default defineComponent({
 
     const cubeUri = ref(urlParams.get('cube'))
 
+    const language = ref(defaultLanguage)
+
     return {
       source,
       cubeUri,
-      language: defaultLanguage,
+      language,
     }
   },
 })
