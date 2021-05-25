@@ -32,7 +32,12 @@
     </form>
 
     <div v-show="!open" class="flex items-end gap-2">
-      <cube-selector v-if="source" :source="source" :cube="cube" @select="$emit('update:cube', $event)" />
+      <cube-selector
+        v-if="source"
+        :source="source"
+        :cube-uri="cubeUri"
+        @select="$emit('update:cubeUri', $event)"
+      />
       <button class="button" @click="open = true">
         <cog-icon class="h-4 w-4" />
         Endpoint config
@@ -51,7 +56,7 @@
 
 <script>
 import { defineComponent, ref, toRefs } from 'vue'
-import { Cube, Source } from 'rdf-cube-view-query'
+import { Source } from 'rdf-cube-view-query'
 import { CogIcon } from '@heroicons/vue/solid'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import CubeSelector from './CubeSelector.vue'
@@ -67,8 +72,8 @@ export default defineComponent({
       type: Source,
       required: false,
     },
-    cube: {
-      type: Cube,
+    cubeUri: {
+      type: String,
       required: false,
     },
     language: {
@@ -76,13 +81,18 @@ export default defineComponent({
       required: false,
     },
   },
-  emits: ['update:source', 'update:cube', 'update:language'],
+  emits: ['update:source', 'update:cubeUri', 'update:language'],
 
   setup (props) {
     const { source } = toRefs(props)
 
     const optionsInit = source.value
-      ? { ...source }
+      ? {
+        endpointUrl: source.value.endpoint?.value,
+        user: source.value.user,
+        password: source.value.password,
+        sourceGraph: source.value.graph?.value,
+      }
       : { endpointUrl: process.env.VUE_APP_ENDPOINT_URL }
     const options = ref(optionsInit)
 

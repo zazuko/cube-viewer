@@ -3,11 +3,11 @@
     <h1 class="font-bold text text-gray-600 uppercase">
       Zazuko Cube Viewer
     </h1>
-    <source-config v-model:source="source" v-model:cube="cube" v-model:language="language" />
+    <source-config v-model:source="source" v-model:cubeUri="cubeUri" v-model:language="language" />
     <cube-viewer
-      v-if="cube"
+      v-if="source && cubeUri"
       :source="source"
-      :cube="cube"
+      :cubeUri="cubeUri"
       :language="language"
       class="bg-white rounded shadow-lg overflow-x-auto"
     />
@@ -15,21 +15,38 @@
 </template>
 
 <script>
+import { defineComponent, ref } from 'vue'
 import CubeViewer from './components/CubeViewer.vue'
 import SourceConfig from './components/SourceConfig.vue'
+import { Source } from 'rdf-cube-view-query'
 
 const defaultLanguage = ['en', '*']
 
-export default {
+export default defineComponent({
   name: 'App',
   components: { CubeViewer, SourceConfig },
 
-  data () {
+  setup () {
+    const urlParams = new URLSearchParams(window.location.search.substring(1))
+
+    const source = ref(null)
+    const endpointUrl = urlParams.get('endpointUrl')
+    if (endpointUrl) {
+      source.value = new Source({
+        endpointUrl,
+        user: urlParams.get('user') || undefined,
+        password: urlParams.get('password') || undefined,
+        sourceGraph: urlParams.get('sourceGraph') || undefined,
+      })
+    }
+
+    const cubeUri = ref(urlParams.get('cube'))
+
     return {
-      source: null,
-      cube: null,
+      source,
+      cubeUri,
       language: defaultLanguage,
     }
   },
-}
+})
 </script>

@@ -6,7 +6,7 @@
   <div v-else-if="cubes.error" class="p-2 text-red-500">
     {{ cubes.error }}
   </div>
-  <select v-else :value="cube?.term.value" @change="onSelect">
+  <select v-else :value="cubeUri" @change="onSelect">
     <option>Select cube</option>
     <option v-for="cube in cubes.data" :key="cube.term.value" :value="cube.term.value">
       {{ cube.term.value }}
@@ -28,7 +28,7 @@ export default defineComponent({
       type: Source,
       required: true,
     },
-    cube: Cube,
+    cubeUri: String,
   },
   emits: ['select'],
 
@@ -40,6 +40,7 @@ export default defineComponent({
 
       try {
         const cubesData = await source.value.cubes({
+          noShape: true,
           filters: [
             Cube.filter.noValidThrough(),
           ],
@@ -59,12 +60,7 @@ export default defineComponent({
 
   methods: {
     onSelect (event) {
-      const cubeURI = event.target.value
-
-      if (!cubeURI || cubeURI === this.cube?.term.value) return
-
-      const cube = this.cubes.data.find(({ term }) => term.value === cubeURI)
-      this.$emit('select', cube)
+      this.$emit('select', event.target.value)
     },
   },
 })
