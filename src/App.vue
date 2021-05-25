@@ -1,5 +1,8 @@
 <template>
   <div class="w-full h-full p-4 flex flex-col gap-4">
+    <h1 class="font-bold text text-gray-600 uppercase">
+      Zazuko Cube Viewer
+    </h1>
     <source-config v-model:source="source" v-model:cube="cube" v-model:language="language" />
     <cube-viewer
       v-if="cube"
