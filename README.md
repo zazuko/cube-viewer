@@ -51,3 +51,8 @@ Compile component app for production:
 ```
 npm run build-wc
 ```
+
+Deploy a new version of the app:
+```
+npm run deploy
+```
