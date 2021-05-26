@@ -3,12 +3,12 @@
 Cube Viewer is both an **app** and a **reusable component** to visualize data
 cubes based on the [rdf-cube-schema](https://github.com/zazuko/rdf-cube-schema).
 
-A demo of the app is deployed at [zazuko.github.io/cube-viewer](https://zazuko.github.io/cube-viewer/).
+A demo of the app is deployed at [cube-viewer.zazuko.com](https://cube-viewer.zazuko.com).
 
 ## Link to a specific cube
 
 It is possible to create a link to view a specific cube:
-`https://zazuko.github.io/cube-viewer/?endpointUrl=<endpoint URI>&cube=<cube URI>`
+`https://cube-viewer.zazuko.com?endpointUrl=<endpoint URI>&cube=<cube URI>`
 
 The following query params are supported:
 - `endpointUrl` (mandatory): URL of the SPARQL endpoint
