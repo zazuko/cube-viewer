@@ -19,7 +19,7 @@
 
       <table>
         <thead>
-          <tr>
+          <tr class="h-1">
             <dimension-header
               v-for="dimension in cube.data.dimensions"
               :key="dimension.ptr.term.value"

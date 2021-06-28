@@ -88,3 +88,9 @@
     @apply text-sm;
   }
 }
+
+@layer utilities {
+  .h-inherit {
+    height: inherit;
+  }
+}

@@ -1,6 +1,7 @@
 <template>
-  <th :class="{'bg-primary-50': isMeasure}">
-    <p class="mb-2 flex items-center justify-between">
+  <th class="h-inherit" :class="{'bg-primary-50': isMeasure}">
+    <div class="h-full flex flex-col justify-between">
+    <div class="mb-2 flex items-center justify-between">
       <button
         class="flex items-center"
         :class="{'font-semibold': (isMeasure || isKey), 'underline': isSortDimension}"
@@ -26,8 +27,8 @@
           />
         </popover-panel>
       </popover>
-    </p>
-    <p class="flex items-center gap-1">
+    </div>
+    <div class="flex items-center gap-1">
       <scale-type-icon :scale-of-measure="scaleType" />
       <data-kind-icon :data-kind="dataKind" />
       <span v-if="description" class="tag" :title="description">
@@ -36,7 +37,9 @@
       <span v-if="isShared" class="tag" title="Linked to shared dimension">
         <link-icon class="w-5 h-5" />
       </span>
-    </p>
+      <dimension-metadata :dimension="dimension" />
+    </div>
+    </div>
   </th>
 </template>
 
@@ -49,6 +52,7 @@ import { AnnotationIcon, FilterIcon } from '@heroicons/vue/outline'
 import { ChevronDownIcon, ChevronUpIcon, LinkIcon } from '@heroicons/vue/solid'
 import DataKindIcon from './DataKindIcon.vue'
 import DimensionFilters from './DimensionFilters.vue'
+import DimensionMetadata from './DimensionMetadata.vue'
 import ScaleTypeIcon from './ScaleTypeIcon.vue'
 import * as ns from '../namespace'
 
@@ -60,6 +64,7 @@ export default defineComponent({
     ChevronUpIcon,
     DataKindIcon,
     DimensionFilters,
+    DimensionMetadata,
     FilterIcon,
     LinkIcon,
     Popover,
