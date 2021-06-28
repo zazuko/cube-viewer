@@ -1,5 +1,5 @@
 <template>
-  <div class="p-3 bg-white shadow-lg">
+  <div class="p-3 bg-white shadow-lg flex justify-between items-center">
     <form @submit.prevent="updateSource" v-if="open" class="w-1/3 flex flex-col gap-2">
       <label class="form-field">
         <span class="label">Endpoint URL</span>
@@ -51,6 +51,8 @@
         </template>
       </select-box>
     </div>
+
+    <share-url-button v-if="source && cubeUri" :source="source" :cubeUri="cubeUri" />
   </div>
 </template>
 
@@ -61,12 +63,13 @@ import { CogIcon } from '@heroicons/vue/solid'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import CubeSelector from './CubeSelector.vue'
 import SelectBox from './SelectBox.vue'
+import ShareUrlButton from './ShareUrlButton.vue'
 
 const languages = ['de', 'fr', 'it', 'rm', 'en']
 
 export default defineComponent({
   name: 'SourceConfig',
-  components: { CogIcon, CubeSelector, SelectBox, XCircleIcon },
+  components: { CogIcon, CubeSelector, SelectBox, ShareUrlButton, XCircleIcon },
   props: {
     source: {
       type: Source,
