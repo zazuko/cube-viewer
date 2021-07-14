@@ -1,27 +1,29 @@
 <template>
   <span v-if="!value">-</span>
   <term-display v-else-if="value.termType === 'Literal'" :term="value" :base="cube.term.value" />
-  <popover v-else class="relative">
-    <popover-button class="tag bg-gray-200 whitespace-nowrap">
+  <div v-else class="flex-grow flex items-center justify-end">
+    <button @click="showResourceExplorer = true" class="tag bg-gray-200 whitespace-nowrap">
       <term-display :term="value" :base="cube.term.value" />
-    </popover-button>
-    <popover-panel class="absolute z-10 bg-white border border-gray-300 rounded shadow-lg p-4">
-      <resource-details :uri="value" :cube="cube" />
-    </popover-panel>
-  </popover>
+    </button>
+    <resource-explorer
+      :uri="value"
+      :cube="cube"
+      :is-open="showResourceExplorer"
+      @close="showResourceExplorer = false"
+    />
+  </div>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
 import { Term } from '@rdfjs/data-model'
 import { Cube } from 'rdf-cube-view-query'
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
-import ResourceDetails from './ResourceDetails.vue'
+import ResourceExplorer from './ResourceExplorer.vue'
 import TermDisplay from './TermDisplay.vue'
 
 export default defineComponent({
   name: 'ObservationValue',
-  components: { Popover, PopoverButton, PopoverPanel, ResourceDetails, TermDisplay },
+  components: { ResourceExplorer, TermDisplay },
   props: {
     value: {
       type: Term,
@@ -31,6 +33,12 @@ export default defineComponent({
       type: Cube,
       required: true,
     },
+  },
+
+  data () {
+    return {
+      showResourceExplorer: false,
+    }
   },
 
   computed: {
