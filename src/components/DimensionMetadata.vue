@@ -69,9 +69,7 @@ export default defineComponent({
     properties () {
       const predicates = new TermSet([...this.dimension.ptr.dataset.match(this.dimension.ptr.term)].map(({ predicate }) => predicate))
 
-      const x = [...predicates].map(predicate => [predicate, this.dimension.out(predicate).terms])
-      console.log(x)
-      return x
+      return [...predicates].map(predicate => [predicate, this.dimension.out(predicate).terms])
     },
   },
 })
