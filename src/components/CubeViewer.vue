@@ -15,6 +15,17 @@
         <section v-if="description" class="text-sm text-gray-700">
           {{ description }}
         </section>
+        <div>
+          <button @click="isCubeMetadataOpen = true" title="Cube Metadata">
+            <information-circle-icon class="text-gray-500 w-5 h-5" />
+          </button>
+          <resource-details-dialog
+            title="Cube Metadata"
+            :resource="cube.data.ptr"
+            :is-open="isCubeMetadataOpen"
+            @close="isCubeMetadataOpen = false"
+          />
+        </div>
       </header>
 
       <table>
@@ -87,12 +98,13 @@
 
 <script>
 import { computed, defineComponent, onMounted, ref, toRefs, watch } from 'vue'
-import { XCircleIcon } from '@heroicons/vue/outline'
+import { InformationCircleIcon, XCircleIcon } from '@heroicons/vue/outline'
 import { CubeSource, Filter, Source, View } from 'rdf-cube-view-query'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
+import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 
@@ -101,7 +113,15 @@ const defaultPageSize = 10
 
 export default defineComponent({
   name: 'CubeViewer',
-  components: { DimensionHeader, LoadingIcon, ObservationValue, PaginationMenu, XCircleIcon },
+  components: {
+    DimensionHeader,
+    InformationCircleIcon,
+    LoadingIcon,
+    ObservationValue,
+    PaginationMenu,
+    ResourceDetailsDialog,
+    XCircleIcon,
+  },
   props: {
     source: {
       type: Source,
@@ -217,6 +237,8 @@ export default defineComponent({
     onMounted(fetchObservations)
     watch(cubeView, fetchObservations)
 
+    const isCubeMetadataOpen = ref(false)
+
     return {
       cube,
       page,
@@ -227,6 +249,7 @@ export default defineComponent({
       cubeSource,
       cubeView,
       observations,
+      isCubeMetadataOpen,
     }
   },
 
