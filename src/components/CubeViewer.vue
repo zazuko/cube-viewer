@@ -82,7 +82,12 @@
                 'bg-primary-50': isMeasureDimension(dimension),
               }"
             >
-              <observation-value :value="observation[dimension.path.value]" :cube="cube.data" />
+              <observation-value
+                :value="observation[dimension.path.value]"
+                :cube="cube.data"
+                :labels="labels[dimension.path.value]"
+                :language="language"
+              />
             </td>
           </tr>
         </tbody>
@@ -97,9 +102,11 @@
 </template>
 
 <script>
-import { computed, defineComponent, onMounted, ref, toRefs, watch } from 'vue'
+import { defineComponent, onMounted, ref, toRefs, watch } from 'vue'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/vue/outline'
-import { CubeSource, Filter, Source, View } from 'rdf-cube-view-query'
+import { CubeSource, Filter, LookupSource, Source, View } from 'rdf-cube-view-query'
+import clownface from 'clownface'
+import RDF from '@rdfjs/dataset'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
@@ -141,13 +148,32 @@ export default defineComponent({
     const { source, cubeUri } = toRefs(props)
 
     const cube = ref(Remote.loading())
+    const cubeSource = ref(null)
+
+    const filters = ref(new Map())
+
+    const page = ref(1)
+    const pageSize = ref(defaultPageSize)
+
+    const sortDimension = ref(null)
+    const sortDirection = ref(ns.view.Ascending)
+
+    const cubeView = ref(null)
+
     const fetchCube = async () => {
       cube.value = Remote.loading()
+      cubeSource.value = null
+      filters.value = null
+      cubeView.value = null
+      labels.value = {}
 
       try {
         const cubeData = await source.value.cube(cubeUri.value)
         if (cubeData) {
           cube.value = Remote.loaded(cubeData)
+          cubeSource.value = CubeSource.fromSource(source.value, cubeData)
+          filters.value = new Map(cubeData.dimensions.map(dimension => [dimension.path.value, []]))
+          cubeView.value = prepareCubeView(cubeData, page.value, pageSize.value, filters.value, sortDimension.value, sortDirection.value)
         } else {
           cube.value = Remote.error(`Could not find cube ${cubeUri.value}`)
         }
@@ -157,71 +183,6 @@ export default defineComponent({
     }
     onMounted(fetchCube)
     watch(cubeUri, fetchCube)
-
-    const page = ref(1)
-    const pageSize = ref(defaultPageSize)
-
-    const sortDimension = ref(null)
-    const sortDirection = ref(ns.view.Ascending)
-
-    const filters = ref(new Map())
-    const initFilters = () => {
-      if (cube.value.data) {
-        filters.value = new Map(cube.value.data.dimensions.map(dimension => [dimension.path.value, []]))
-      }
-    }
-    initFilters()
-    watch(cube, initFilters)
-
-    const cubeSource = computed(() => {
-      if (cube.value.data) {
-        return CubeSource.fromSource(source.value, cube.value.data)
-      } else {
-        return null
-      }
-    })
-    const cubeView = computed(() => {
-      if (!cube.value.data) return null
-
-      const view = View.fromCube(cube.value.data)
-
-      // Add view sorting and pagination
-      view.ptr.addOut(ns.view.projection, projection => {
-        const offset = (page.value - 1) * pageSize.value
-
-        projection.addOut(ns.view.limit, pageSize.value)
-        projection.addOut(ns.view.offset, offset)
-
-        if (sortDimension.value) {
-          // Passing `path` because there's a bug in the library that doesn't
-          // handle dimension comparison properly
-          const orderDimension = view.dimension({ cubeDimension: sortDimension.value.path })
-          const order = projection.blankNode()
-            .addOut(ns.view.dimension, orderDimension.ptr)
-            .addOut(ns.view.direction, sortDirection.value)
-
-          projection.addList(ns.view.orderBy, order)
-        }
-      })
-
-      // Add view filters
-      const viewFilters = [...filters.value.entries()].map(([dimensionPath, dimensionFilters]) =>
-        dimensionFilters.map(({ operation, arg }) => {
-          const viewDimension = view.dimension({ cubeDimension: dimensionPath })
-
-          return new Filter({
-            dimension: viewDimension,
-            operation: operation.term,
-            arg,
-          })
-        }))
-
-      for (const filter of viewFilters) {
-        view.addFilter(filter)
-      }
-
-      return view
-    })
 
     const observations = ref(Remote.loading())
     const fetchObservations = async () => {
@@ -237,6 +198,43 @@ export default defineComponent({
     onMounted(fetchObservations)
     watch(cubeView, fetchObservations)
 
+    // Labels are stored as Record<dimensionURI, Clownface>
+    const labels = ref({})
+    const fetchLabels = async () => {
+      labels.value = {}
+
+      if (!cubeView.value || !cubeSource.value) return
+
+      for (const dimension of cubeView.value.dimensions) {
+        const cubeDimension = dimension.cubeDimensions[0]
+        const path = cubeDimension.path
+
+        const dimensionLabels = clownface({ dataset: RDF.dataset() })
+
+        if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
+          const view = new View({ parent: cubeSource.value })
+          const source = LookupSource.fromSource(cubeSource.value)
+          view.addDimension(dimension)
+          view.addDimension(view.createDimension({
+            source,
+            path: ns.schema.name,
+            join: dimension,
+            as: ns.schema.name,
+          }))
+
+          const data = await view.observations()
+          for (const row of data) {
+            const term = row[path.value]
+            const label = row[ns.schema.name.value]
+            dimensionLabels.node(term).addOut(ns.schema.name, label)
+          }
+        }
+
+        labels.value[path.value] = dimensionLabels
+      }
+    }
+    watch(cubeView, fetchLabels)
+
     const isCubeMetadataOpen = ref(false)
 
     return {
@@ -250,6 +248,7 @@ export default defineComponent({
       cubeView,
       observations,
       isCubeMetadataOpen,
+      labels,
     }
   },
 
@@ -308,4 +307,45 @@ export default defineComponent({
     },
   },
 })
+
+function prepareCubeView (cube, page, pageSize, filters, sortDimension, sortDirection) {
+  const view = View.fromCube(cube)
+
+  // Add view sorting and pagination
+  view.ptr.addOut(ns.view.projection, projection => {
+    const offset = (page - 1) * pageSize
+
+    projection.addOut(ns.view.limit, pageSize)
+    projection.addOut(ns.view.offset, offset)
+
+    if (sortDimension) {
+      // Passing `path` because there's a bug in the library that doesn't
+      // handle dimension comparison properly
+      const orderDimension = view.dimension({ cubeDimension: sortDimension.path })
+      const order = projection.blankNode()
+        .addOut(ns.view.dimension, orderDimension.ptr)
+        .addOut(ns.view.direction, sortDirection)
+
+      projection.addList(ns.view.orderBy, order)
+    }
+  })
+
+  // Add view filters
+  const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) =>
+    dimensionFilters.map(({ operation, arg }) => {
+      const viewDimension = view.dimension({ cubeDimension: dimensionPath })
+
+      return new Filter({
+        dimension: viewDimension,
+        operation: operation.term,
+        arg,
+      })
+    }))
+
+  for (const filter of viewFilters) {
+    view.addFilter(filter)
+  }
+
+  return view
+}
 </script>
