@@ -43,6 +43,7 @@ export default defineComponent({
           noShape: true,
           filters: [
             Cube.filter.noValidThrough(),
+            Cube.filter.noExpires(),
           ],
         })
         cubes.value = Remote.loaded(cubesData)
