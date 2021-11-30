@@ -21,7 +21,7 @@
     "@headlessui/vue": "^1.1.1",
     "@heroicons/vue": "^1.0.1",
     "@rdfjs/dataset": "^1.1.1",
-    "@rdfjs/fetch": "^2.1.0",
+    "@rdfjs/fetch": "^3.0.0",
     "@rdfjs/namespace": "^1.1.0",
     "@rdfjs/term-set": "^1.0.2",
     "@tailwindcss/forms": "^0.3.2",
