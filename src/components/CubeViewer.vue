@@ -102,7 +102,7 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, ref, toRefs, watch } from 'vue'
+import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/vue/outline'
 import { CubeSource, Filter, LookupSource, Source, View } from 'rdf-cube-view-query'
 import clownface from 'clownface'
@@ -147,24 +147,21 @@ export default defineComponent({
   setup (props) {
     const { source, cubeUri } = toRefs(props)
 
-    const cube = ref(Remote.loading())
-    const cubeSource = ref(null)
+    const cube = shallowRef(Remote.loading())
+    const cubeSource = shallowRef(null)
 
     const filters = ref(new Map())
 
     const page = ref(1)
     const pageSize = ref(defaultPageSize)
 
-    const sortDimension = ref(null)
-    const sortDirection = ref(ns.view.Ascending)
-
-    const cubeView = ref(null)
+    const sortDimension = shallowRef(null)
+    const sortDirection = shallowRef(ns.view.Ascending)
 
     const fetchCube = async () => {
       cube.value = Remote.loading()
       cubeSource.value = null
-      filters.value = null
-      cubeView.value = null
+      filters.value = new Map()
       labels.value = {}
 
       try {
@@ -173,7 +170,6 @@ export default defineComponent({
           cube.value = Remote.loaded(cubeData)
           cubeSource.value = CubeSource.fromSource(source.value, cubeData)
           filters.value = new Map(cubeData.dimensions.map(dimension => [dimension.path.value, []]))
-          cubeView.value = prepareCubeView(cubeData, page.value, pageSize.value, filters.value, sortDimension.value, sortDirection.value)
         } else {
           cube.value = Remote.error(`Could not find cube ${cubeUri.value}`)
         }
@@ -183,6 +179,21 @@ export default defineComponent({
     }
     onMounted(fetchCube)
     watch(cubeUri, fetchCube)
+
+    const cubeView = shallowRef(null)
+    const prepareCubeView = () => {
+      if (!cube.value.data) return
+
+      cubeView.value = makeCubeView(
+        cube.value.data,
+        page.value,
+        pageSize.value,
+        filters.value,
+        sortDimension.value,
+        sortDirection.value
+      )
+    }
+    watch([cube, page, pageSize, sortDimension, sortDirection, filters], prepareCubeView)
 
     const observations = ref(Remote.loading())
     const fetchObservations = async () => {
@@ -249,6 +260,7 @@ export default defineComponent({
       observations,
       isCubeMetadataOpen,
       labels,
+      prepareCubeView,
     }
   },
 
@@ -300,15 +312,17 @@ export default defineComponent({
 
     updateDimensionFilters (dimension, filters) {
       this.filters.set(dimension.path.value, filters)
+      this.prepareCubeView()
     },
 
     removeFilter ({ dimensionPath, index }) {
       this.filters.get(dimensionPath).splice(index, 1)
+      this.prepareCubeView()
     },
   },
 })
 
-function prepareCubeView (cube, page, pageSize, filters, sortDimension, sortDirection) {
+function makeCubeView (cube, page, pageSize, filters, sortDimension, sortDirection) {
   const view = View.fromCube(cube)
 
   // Add view sorting and pagination
