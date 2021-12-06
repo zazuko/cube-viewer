@@ -91,11 +91,11 @@ export default defineComponent({
 
     const optionsInit = source.value
       ? {
-        endpointUrl: source.value.endpoint?.value,
-        user: source.value.user,
-        password: source.value.password,
-        sourceGraph: source.value.graph?.value,
-      }
+          endpointUrl: source.value.endpoint?.value,
+          user: source.value.user,
+          password: source.value.password,
+          sourceGraph: source.value.graph?.value,
+        }
       : { endpointUrl: process.env.VUE_APP_ENDPOINT_URL }
     const options = ref(optionsInit)
 
