@@ -34,8 +34,10 @@
             <dimension-header
               v-for="dimension in cube.data.dimensions"
               :key="dimension.ptr.term.value"
+              :cube="cube.data"
               :dimension="dimension"
               :language="displayLanguage"
+              :labels="labels[dimension.path.value]"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
               :filters="filters.get(dimension.path.value)"
@@ -86,7 +88,7 @@
                 :value="observation[dimension.path.value]"
                 :cube="cube.data"
                 :labels="labels[dimension.path.value]"
-                :language="language"
+                :language="displayLanguage"
               />
             </td>
           </tr>
@@ -280,14 +282,23 @@ export default defineComponent({
     },
 
     filtersSummary () {
+      const language = this.displayLanguage
+      const cube = this.cube.data
+
       return [...this.filters.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
         dimensionFilters.map(({ dimension, operation, arg }, index) => {
-          const dimensionLabel = dimension.out(ns.schema.name, { language: this.displayLanguage }).value
+          const dimensionLabel = dimension.out(ns.schema.name, { language }).value
+          const dimensionValueLabels = this.labels[dimension.path.value]
+          const valueLabel = (
+            dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
+            cube.ptr.node(arg).out(ns.schema.name, { language }).value ||
+            ns.shrink(arg.value, this.cube.data.term.value)
+          )
 
           return {
             dimensionPath,
             index,
-            label: `${dimensionLabel} ${operation.label} ${ns.shrink(arg.value, this.cube.data.term.value)}`,
+            label: `${dimensionLabel} ${operation.label} ${valueLabel}`,
           }
         })
       )

@@ -4,7 +4,10 @@
       <dimension-filter
         v-for="(filter, index) in filtersData"
         :key="index"
+        :cube="cube"
         :dimension="dimension"
+        :language="language"
+        :labels="labels"
         v-model:filter="filter.value"
       />
       <button type="button" @click="addFilter" class="button-text justify-end">
@@ -21,13 +24,17 @@
 <script>
 import { defineComponent, ref, toRefs } from 'vue'
 import { PlusIcon } from '@heroicons/vue/solid'
-import { CubeDimension } from 'rdf-cube-view-query'
+import { Cube, CubeDimension } from 'rdf-cube-view-query'
 import DimensionFilter from './DimensionFilter.vue'
 
 export default defineComponent({
   name: 'DimensionFilters',
   components: { DimensionFilter, PlusIcon },
   props: {
+    cube: {
+      type: Cube,
+      required: true,
+    },
     dimension: {
       type: CubeDimension,
       required: true,
@@ -35,6 +42,14 @@ export default defineComponent({
     filters: {
       type: Array,
       required: true,
+    },
+    labels: {
+      type: Object,
+      required: false,
+    },
+    language: {
+      type: [String, Array],
+      required: false,
     },
   },
   emits: ['update:filters'],

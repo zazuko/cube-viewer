@@ -8,11 +8,11 @@
     </SelectBox>
     <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
       <template v-slot:button="{ selected }">
-        <term-display v-if="selected" :term="selected" />
+        <term-display v-if="selected" :term="resourceLabel(selected)" :base="cube.term.value" />
         <span v-else class="text-gray-500">Value</span>
       </template>
       <template v-slot:option="{ option }">
-        <term-display :term="option" />
+        <term-display :term="resourceLabel(option)" :base="cube.term.value" />
       </template>
     </SelectBox>
     <div v-else>
@@ -28,7 +28,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { CubeDimension } from 'rdf-cube-view-query'
+import { Cube, CubeDimension } from 'rdf-cube-view-query'
 import SelectBox from './SelectBox.vue'
 import TermDisplay from './TermDisplay.vue'
 import TermInput from './TermInput.vue'
@@ -48,6 +48,10 @@ export default defineComponent({
   name: 'DimensionFilters',
   components: { SelectBox, TermDisplay, TermInput },
   props: {
+    cube: {
+      type: Cube,
+      required: true,
+    },
     dimension: {
       type: CubeDimension,
       required: true,
@@ -55,6 +59,14 @@ export default defineComponent({
     filter: {
       type: Object,
       required: true,
+    },
+    labels: {
+      type: Object,
+      required: false,
+    },
+    language: {
+      type: [String, Array],
+      required: false,
     },
   },
   emits: ['update:filter'],
@@ -73,6 +85,14 @@ export default defineComponent({
 
     updateArg (arg) {
       this.$emit('update:filter', { ...this.filter, arg })
+    },
+
+    resourceLabel (term) {
+      return (
+        this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
+        this.cube.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
+        term
+      )
     },
   },
 })
