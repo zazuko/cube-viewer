@@ -218,33 +218,14 @@ export default defineComponent({
 
       if (!cubeView.value || !cubeSource.value) return
 
-      for (const dimension of cubeView.value.dimensions) {
-        const cubeDimension = dimension.cubeDimensions[0]
-        const path = cubeDimension.path
+      const dimensions = cubeView.value.dimensions
+      const dimensionsWithLabels = await Promise.all(dimensions.map(dimension =>
+        fetchDimensionLabels(dimension, cubeSource.value)))
 
-        const dimensionLabels = clownface({ dataset: RDF.dataset() })
-
-        if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
-          const view = new View({ parent: cubeSource.value })
-          const source = LookupSource.fromSource(cubeSource.value)
-          view.addDimension(dimension)
-          view.addDimension(view.createDimension({
-            source,
-            path: ns.schema.name,
-            join: dimension,
-            as: ns.schema.name,
-          }))
-
-          const data = await view.observations()
-          for (const row of data) {
-            const term = row[path.value]
-            const label = row[ns.schema.name.value]
-            dimensionLabels.node(term).addOut(ns.schema.name, label)
-          }
-        }
-
-        labels.value[path.value] = dimensionLabels
-      }
+      labels.value = dimensionsWithLabels.reduce(
+        (acc, [dimensionPath, dimensionLabels]) => ({ ...acc, [dimensionPath.value]: dimensionLabels }),
+        {}
+      )
     }
     watch(cubeView, fetchLabels)
 
@@ -372,5 +353,33 @@ function makeCubeView (cube, page, pageSize, filters, sortDimension, sortDirecti
   }
 
   return view
+}
+
+const fetchDimensionLabels = async (dimension, cubeSource) => {
+  const cubeDimension = dimension.cubeDimensions[0]
+  const path = cubeDimension.path
+
+  const dimensionLabels = clownface({ dataset: RDF.dataset() })
+
+  if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
+    const view = new View({ parent: cubeSource })
+    const source = LookupSource.fromSource(cubeSource)
+    view.addDimension(dimension)
+    view.addDimension(view.createDimension({
+      source,
+      path: ns.schema.name,
+      join: dimension,
+      as: ns.schema.name,
+    }))
+
+    const data = await view.observations()
+    for (const row of data) {
+      const term = row[path.value]
+      const label = row[ns.schema.name.value]
+      dimensionLabels.node(term).addOut(ns.schema.name, label)
+    }
+  }
+
+  return [path, dimensionLabels]
 }
 </script>
