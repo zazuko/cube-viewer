@@ -1,9 +1,8 @@
 <template>
-  <th class="h-inherit" :class="{'bg-primary-50': isMeasure}">
-    <div class="h-full flex flex-col justify-between">
+  <div class="h-full px-2 py-1 flex flex-col justify-between" :class="{'bg-primary-50': isMeasure}">
     <div class="mb-2 flex items-center justify-between">
       <button
-        class="flex items-center"
+        class="flex items-start text-left leading-tight"
         :class="{'font-semibold': (isMeasure || isKey), 'underline': isSortDimension}"
         :title="property"
         @click="updateSort"
@@ -42,8 +41,7 @@
       </span>
       <dimension-metadata :dimension="dimension" />
     </div>
-    </div>
-  </th>
+  </div>
 </template>
 
 <script>

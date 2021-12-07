@@ -28,23 +28,23 @@
         </div>
       </header>
 
-      <table>
+      <!-- h-1 is a hack to make the header cells layout work -->
+      <table class="h-1">
         <thead>
-          <tr class="h-1">
-            <dimension-header
-              v-for="dimension in cube.data.dimensions"
-              :key="dimension.ptr.term.value"
-              :cube="cube.data"
-              :dimension="dimension"
-              :language="displayLanguage"
-              :labels="labels[dimension.path.value]"
-              :sort-dimension="sortDimension"
-              :sort-direction="sortDirection"
-              :filters="filters.get(dimension.path.value)"
-              @updateSort="updateSort"
-              @update:filters="updateDimensionFilters"
-              class="px-2 py-1 border border-b-2 align-top text-left"
-            />
+          <tr>
+            <th v-for="dimension in cube.data.dimensions" :key="dimension.ptr.term.value" class="border border-b-2 align-top text-left h-full">
+              <dimension-header
+                :cube="cube.data"
+                :dimension="dimension"
+                :language="displayLanguage"
+                :labels="labels[dimension.path.value]"
+                :sort-dimension="sortDimension"
+                :sort-direction="sortDirection"
+                :filters="filters.get(dimension.path.value)"
+                @updateSort="updateSort"
+                @update:filters="updateDimensionFilters"
+              />
+            </th>
           </tr>
           <tr v-show="filtersSummary.length > 0">
             <td :colspan="cube.data.dimensions.length" class="border px-2 py-2">
