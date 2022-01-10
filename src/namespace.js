@@ -1,16 +1,16 @@
-import namespace from '@rdfjs/namespace'
 import prefixes from '@zazuko/rdf-vocabularies/prefixes'
 import { shrink as _shrink } from '@zazuko/rdf-vocabularies/shrink'
 import { expand as _expand } from '@zazuko/rdf-vocabularies/expand'
+import RDF from './rdf'
 
-export const cube = namespace('https://cube.link/')
-export const meta = namespace('https://cube.link/meta/')
-export const qudt = namespace(prefixes.qudt)
-export const rdf = namespace(prefixes.rdf)
-export const schema = namespace(prefixes.schema)
-export const sh = namespace(prefixes.sh)
-export const time = namespace(prefixes.time)
-export const view = namespace('https://cube.link/view/')
+export const cube = RDF.namespace('https://cube.link/')
+export const meta = RDF.namespace('https://cube.link/meta/')
+export const qudt = RDF.namespace(prefixes.qudt)
+export const rdf = RDF.namespace(prefixes.rdf)
+export const schema = RDF.namespace(prefixes.schema)
+export const sh = RDF.namespace(prefixes.sh)
+export const time = RDF.namespace(prefixes.time)
+export const view = RDF.namespace('https://cube.link/view/')
 
 export function expand (uri) {
   if (uri && !uri.includes(':')) return uri

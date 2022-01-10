@@ -30,12 +30,12 @@
 </template>
 
 <script>
-import TermSet from '@rdfjs/term-set'
 import { defineComponent } from 'vue'
 import { Clownface } from 'clownface'
 import { Dialog, DialogOverlay, DialogTitle } from '@headlessui/vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import TermDisplay from './TermDisplay.vue'
+import RDF from '../rdf'
 
 export default defineComponent({
   name: 'DimensionMetadata',
@@ -65,7 +65,7 @@ export default defineComponent({
   computed: {
     properties () {
       const pointer = this.resource
-      const predicates = new TermSet([...pointer.dataset.match(pointer.term)].map(({ predicate }) => predicate))
+      const predicates = RDF.termSet([...pointer.dataset.match(pointer.term)].map(({ predicate }) => predicate))
 
       return [...predicates].map(predicate => [predicate, pointer.out(predicate).terms])
     },

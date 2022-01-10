@@ -4,8 +4,8 @@
 
 <script>
 import { defineComponent } from 'vue'
-import * as $rdf from '@rdfjs/data-model'
 import { Term } from '@rdfjs/data-model'
+import RDF from '../rdf'
 
 export default defineComponent({
   name: 'TermInput',
@@ -25,7 +25,7 @@ export default defineComponent({
     update (event) {
       const textValue = event.target.value
       const value = textValue
-        ? $rdf.literal(textValue, this.datatype)
+        ? RDF.literal(textValue, this.datatype)
         : null
 
       this.$emit('update:modelValue', value)

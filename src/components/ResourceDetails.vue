@@ -31,11 +31,11 @@ import { defineAsyncComponent, defineComponent, ref, toRefs, onMounted, watch } 
 import { ExternalLinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
 import fetchRDF from '@rdfjs/fetch'
-import TermSet from '@rdfjs/term-set'
 import clownface from 'clownface'
 import { Cube } from 'rdf-cube-view-query'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import TermDisplay from './TermDisplay.vue'
+import RDF from '../rdf'
 import * as Remote from '../remote'
 
 export default defineComponent({
@@ -93,7 +93,7 @@ export default defineComponent({
       if (!resource) return []
 
       const resourceQuads = [...resource.dataset.match(resource.term, null, null)]
-      const resourcePredicates = new TermSet(resourceQuads.map(({ predicate }) => predicate))
+      const resourcePredicates = RDF.termSet(resourceQuads.map(({ predicate }) => predicate))
 
       return [...resourcePredicates].map((predicate) => {
         const values = resource.out(predicate).terms
