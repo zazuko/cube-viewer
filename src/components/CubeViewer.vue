@@ -107,14 +107,13 @@
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/vue/outline'
 import { CubeSource, Filter, LookupSource, Source, View } from 'rdf-cube-view-query'
-import clownface from 'clownface'
+import RDF from 'rdf-ext'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import * as ns from '../namespace'
-import RDF from '../rdf'
 import * as Remote from '../remote'
 
 const defaultLanguage = '*'
@@ -359,7 +358,7 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   const cubeDimension = dimension.cubeDimensions[0]
   const path = cubeDimension.path
 
-  const dimensionLabels = clownface({ dataset: RDF.dataset() })
+  const dimensionLabels = RDF.clownface({ dataset: RDF.dataset() })
 
   if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
     const view = new View({ parent: cubeSource })

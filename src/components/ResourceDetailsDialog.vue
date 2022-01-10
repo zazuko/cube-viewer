@@ -34,8 +34,8 @@ import { defineComponent } from 'vue'
 import { Clownface } from 'clownface'
 import { Dialog, DialogOverlay, DialogTitle } from '@headlessui/vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
+import RDF from 'rdf-ext'
 import TermDisplay from './TermDisplay.vue'
-import RDF from '../rdf'
 
 export default defineComponent({
   name: 'DimensionMetadata',

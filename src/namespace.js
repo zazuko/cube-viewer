@@ -1,7 +1,7 @@
 import prefixes from '@zazuko/rdf-vocabularies/prefixes'
 import { shrink as _shrink } from '@zazuko/rdf-vocabularies/shrink'
 import { expand as _expand } from '@zazuko/rdf-vocabularies/expand'
-import RDF from './rdf'
+import RDF from 'rdf-ext'
 
 export const cube = RDF.namespace('https://cube.link/')
 export const meta = RDF.namespace('https://cube.link/meta/')

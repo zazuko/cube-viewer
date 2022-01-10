@@ -5,7 +5,7 @@
 <script>
 import { defineComponent } from 'vue'
 import { Term } from '@rdfjs/data-model'
-import RDF from '../rdf'
+import RDF from 'rdf-ext'
 
 export default defineComponent({
   name: 'TermInput',

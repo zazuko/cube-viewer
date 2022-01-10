@@ -30,13 +30,14 @@
 import { defineAsyncComponent, defineComponent, ref, toRefs, onMounted, watch } from 'vue'
 import { ExternalLinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
-import fetchRDF from '@rdfjs/fetch'
-import clownface from 'clownface'
+import formats from '@rdfjs/formats-common'
 import { Cube } from 'rdf-cube-view-query'
+import RDF from 'rdf-ext'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import TermDisplay from './TermDisplay.vue'
-import RDF from '../rdf'
 import * as Remote from '../remote'
+
+RDF.formats.import(formats)
 
 export default defineComponent({
   name: 'ResourceDetails',
@@ -65,12 +66,12 @@ export default defineComponent({
       const term = uri.value
 
       try {
-        const response = await fetchRDF(term.value)
+        const response = await RDF.fetch(term.value)
 
         if (response.status === 200) {
           const dataset = await response.dataset()
 
-          resource.value = Remote.loaded(clownface({ dataset, term }))
+          resource.value = Remote.loaded(RDF.clownface({ dataset, term }))
         } else {
           throw new Error(`${response.status}`)
         }
