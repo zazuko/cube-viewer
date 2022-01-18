@@ -37,19 +37,13 @@ export default defineComponent({
     const cubes = ref(Remote.loading())
     const fetchCubes = async () => {
       cubes.value = Remote.loading()
-
-      try {
-        const cubesData = await source.value.cubes({
-          noShape: true,
-          filters: [
-            Cube.filter.noValidThrough(),
-            Cube.filter.noExpires(),
-          ],
-        })
-        cubes.value = Remote.loaded(cubesData)
-      } catch (e) {
-        cubes.value = Remote.error(e)
-      }
+      cubes.value = await Remote.fetch(async () => source.value.cubes({
+        noShape: true,
+        filters: [
+          Cube.filter.noValidThrough(),
+          Cube.filter.noExpires(),
+        ],
+      }))
     }
     onMounted(fetchCubes)
     watch(source, fetchCubes)

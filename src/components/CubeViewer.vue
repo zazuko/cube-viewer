@@ -98,6 +98,7 @@
       <pagination-menu
         v-model:page="page"
         v-model:pageSize="pageSize"
+        :items-count="observationCount"
       />
     </div>
   </div>
@@ -159,11 +160,16 @@ export default defineComponent({
     const sortDimension = shallowRef(null)
     const sortDirection = shallowRef(ns.view.Ascending)
 
+    const observations = ref(Remote.loading())
+    const observationCount = ref(Remote.loading())
+
     const fetchCube = async () => {
       cube.value = Remote.loading()
       cubeSource.value = null
       filters.value = new Map()
       labels.value = {}
+      observations.value = Remote.loading()
+      observationCount.value = Remote.loading()
 
       try {
         const cubeData = await source.value.cube(cubeUri.value)
@@ -196,16 +202,17 @@ export default defineComponent({
     }
     watch([cube, page, pageSize, sortDimension, sortDirection, filters], prepareCubeView)
 
-    const observations = ref(Remote.loading())
     const fetchObservations = async () => {
       observations.value = Remote.loading()
 
-      try {
-        const observationsData = await cubeView.value.observations()
-        observations.value = Remote.loaded(observationsData)
-      } catch (e) {
-        observations.value = Remote.error(e)
-      }
+      if (!cubeView.value) return
+
+      const [observationsResult, observationCountResult] = await Promise.all([
+        Remote.fetch(cubeView.value.observations.bind(cubeView.value)),
+        Remote.fetch(cubeView.value.observationCount.bind(cubeView.value)),
+      ])
+      observations.value = observationsResult
+      observationCount.value = observationCountResult
     }
     onMounted(fetchObservations)
     watch(cubeView, fetchObservations)
@@ -240,6 +247,7 @@ export default defineComponent({
       cubeSource,
       cubeView,
       observations,
+      observationCount,
       isCubeMetadataOpen,
       labels,
       prepareCubeView,

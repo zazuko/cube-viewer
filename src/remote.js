@@ -10,3 +10,12 @@ export function loaded (data) {
 export function error (error) {
   return { isLoading: false, data: null, error: error }
 }
+
+export async function fetch (callback) {
+  try {
+    const result = await callback()
+    return loaded(result)
+  } catch (e) {
+    return error(e)
+  }
+}
