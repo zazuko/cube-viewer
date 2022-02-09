@@ -5,6 +5,8 @@ cubes based on the [rdf-cube-schema](https://github.com/zazuko/rdf-cube-schema).
 
 A demo of the app is deployed at [cube-viewer.zazuko.com](https://cube-viewer.zazuko.com).
 
+[![RDF Cube Viewer Demo](https://user-images.githubusercontent.com/583021/153154115-efce93de-fedb-4e07-aeb5-34ba1a77b3d0.png)](https://user-images.githubusercontent.com/583021/153151322-c0f91b82-2e90-4391-a79b-e51ed4e25cb3.mp4 "RDF Cube Viewer Demo")
+
 ## Link to a specific cube
 
 It is possible to create a link to view a specific cube:
