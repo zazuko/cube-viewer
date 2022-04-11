@@ -181,6 +181,7 @@ export default defineComponent({
           cube.value = Remote.error(`Could not find cube ${cubeUri.value}`)
         }
       } catch (e) {
+        console.error(e)
         cube.value = Remote.error(e)
       }
     }
