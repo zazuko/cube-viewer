@@ -107,6 +107,7 @@
 <script>
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { InformationCircleIcon, XCircleIcon } from '@heroicons/vue/outline'
+import queue from 'promise-the-world/queue.js'
 import { CubeSource, Filter, LookupSource, Source, View } from 'rdf-cube-view-query'
 import RDF from 'rdf-ext'
 import DimensionHeader from './DimensionHeader.vue'
@@ -163,6 +164,8 @@ export default defineComponent({
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())
 
+    const queryQueue = queue(1)
+
     const fetchCube = async () => {
       cube.value = Remote.loading()
       cubeSource.value = null
@@ -189,8 +192,13 @@ export default defineComponent({
     watch(cubeUri, fetchCube)
 
     const cubeView = shallowRef(null)
+
     const prepareCubeView = () => {
       if (!cube.value.data) return
+
+      if (cubeView.value) {
+        cubeView.value.clear()
+      }
 
       cubeView.value = makeCubeView(
         cube.value.data,
@@ -208,12 +216,13 @@ export default defineComponent({
 
       if (!cubeView.value) return
 
-      const [observationsResult, observationCountResult] = await Promise.all([
-        Remote.fetch(cubeView.value.observations.bind(cubeView.value)),
-        Remote.fetch(cubeView.value.observationCount.bind(cubeView.value)),
-      ])
-      observations.value = observationsResult
-      observationCount.value = observationCountResult
+      await queryQueue.add(async () => {
+        observations.value = await Remote.fetch(cubeView.value.observations.bind(cubeView.value))
+      })
+
+      await queryQueue.add(async () => {
+        observationCount.value = await Remote.fetch(cubeView.value.observationCount.bind(cubeView.value))
+      })
     }
     onMounted(fetchObservations)
     watch(cubeView, fetchObservations)
@@ -226,8 +235,10 @@ export default defineComponent({
       if (!cubeView.value || !cubeSource.value) return
 
       const dimensions = cubeView.value.dimensions
-      const dimensionsWithLabels = await Promise.all(dimensions.map(dimension =>
-        fetchDimensionLabels(dimension, cubeSource.value)))
+
+      const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
+        return queryQueue.add(async () => fetchDimensionLabels(dimension, cubeSource.value))
+      }))
 
       labels.value = dimensionsWithLabels.reduce(
         (acc, [dimensionPath, dimensionLabels]) => ({ ...acc, [dimensionPath.value]: dimensionLabels }),
