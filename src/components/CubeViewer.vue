@@ -167,6 +167,10 @@ export default defineComponent({
     const queryQueue = queue(1)
 
     const fetchCube = async () => {
+      if (typeof cube.value?.data?.clear === 'function') {
+        cube.value.data.clear()
+      }
+
       cube.value = Remote.loading()
       cubeSource.value = null
       filters.value = new Map()
@@ -176,15 +180,23 @@ export default defineComponent({
 
       try {
         const cubeData = await source.value.cube(cubeUri.value)
+
         if (cubeData) {
           cube.value = Remote.loaded(cubeData)
           cubeSource.value = CubeSource.fromSource(source.value, cubeData)
           filters.value = new Map(cubeData.dimensions.map(dimension => [dimension.path.value, []]))
         } else {
+          if (typeof cube.value?.data?.clear === 'function') {
+            cube.value.data.clear()
+          }
           cube.value = Remote.error(`Could not find cube ${cubeUri.value}`)
         }
       } catch (e) {
         console.error(e)
+
+        if (typeof cube.value?.data?.clear === 'function') {
+          cube.value.data.clear()
+        }
         cube.value = Remote.error(e)
       }
     }
