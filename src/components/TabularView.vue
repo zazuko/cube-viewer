@@ -80,7 +80,7 @@
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
-import { Filter, LookupSource, View } from 'rdf-cube-view-query'
+import { LookupSource, View } from 'rdf-cube-view-query'
 import RDF from 'rdf-ext'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
@@ -89,8 +89,7 @@ import PaginationMenu from './PaginationMenu.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import { viewFromCube } from './common/viewFromCube.js'
-
-const defaultPageSize = 10
+import { controlsFromView } from './common/viewFromCube.js'
 
 export default defineComponent({
   name: 'TabularView',
@@ -122,15 +121,13 @@ export default defineComponent({
       cube
     } = toRefs(props)
 
-    // Populate some filters
-    const filters = ref(new Map())
-    cube.value.dimensions.forEach(d => filters.value.set(d.path.value, []))
-
-    // This needs to come from the view
-    const page = ref(1)
-    const pageSize = ref(defaultPageSize)
-    const sortDimension = shallowRef(null)
-    const sortDirection = shallowRef(ns.view.Ascending)
+    // Get all the controls from the view
+    const controls = controlsFromView(view.value)
+    const filters = ref(controls.filters)
+    const page = ref(controls.page)
+    const pageSize = ref(controls.pageSize)
+    const sortDimension = shallowRef(controls.sortDimension)
+    const sortDirection = shallowRef(controls.sortDirection)
 
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())
@@ -141,32 +138,13 @@ export default defineComponent({
       if (view.value) {
         view.value.clear()
       }
-      const result = viewFromCube({ cube: cube.value }, {
+      return viewFromCube({ cube: cube.value }, {
         page: page.value,
         pageSize: pageSize.value,
         sortDimension: sortDimension.value,
-        sortDirection: sortDirection.value
+        sortDirection: sortDirection.value,
+        filters: filters.value
       })
-
-      // Add view filters
-      const viewFilters = [...view.value.filters.entries()].map(([dimensionPath, dimensionFilters]) =>
-        dimensionFilters.map(({
-          operation,
-          arg
-        }) => {
-          const viewDimension = result.dimension({ cubeDimension: dimensionPath })
-
-          return new Filter({
-            dimension: viewDimension,
-            operation: operation.term,
-            arg
-          })
-        }))
-
-      for (const filter of viewFilters) {
-        result.addFilter(filter)
-      }
-      return result
     }
 
     const updateObservations = async () => {
@@ -193,18 +171,17 @@ export default defineComponent({
 
     // Labels are stored as Record<dimensionURI, Clownface>
     const labels = ref({})
-    const fetchLabels = async () => {
-      labels.value = {}
+    const fetchLabels = async (currentView) => {
 
-      if (!view.value || !view.value) return
+      if (!currentView || !currentView) return
 
-      const dimensions = view.value.dimensions
+      const dimensions = currentView.dimensions
 
       const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
-        return queryQueue.add(async () => fetchDimensionLabels(dimension, view.value))
+        return queryQueue.add(async () => fetchDimensionLabels(dimension, currentView))
       }))
 
-      labels.value = dimensionsWithLabels.reduce(
+      return dimensionsWithLabels.reduce(
         (acc, [dimensionPath, dimensionLabels]) => ({
           ...acc,
           [dimensionPath.value]: dimensionLabels
@@ -212,8 +189,9 @@ export default defineComponent({
         {}
       )
     }
-    onMounted(fetchLabels)
-    watch(view, fetchLabels)
+
+    onMounted(() => labels.value = fetchLabels(view.value))
+    watch(view, () => labels.value = fetchLabels(view.value))
 
     return {
       page,

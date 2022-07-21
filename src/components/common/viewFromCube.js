@@ -1,18 +1,51 @@
+/* eslint-disable */
+
 import { Filter, View } from 'rdf-cube-view-query'
 import * as ns from '../../namespace.js'
 
-function viewFromCube ({ cube }, options = {
+const DEFAULT_PAGE_SIZE = 10
+
+function controlsFromView (view) {
+
+  const projection = view.ptr.out(ns.view.projection)
+  const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_PAGE_SIZE
+  const offset = projection.out(ns.view.offset).value
+  const page = Math.floor(offset / pageSize) + 1
+
+  const filters = new Map()
+  const sortDimension = null
+  const sortDirection = ns.view.Ascending
+
+  // @TODO dimensions from view
+  // @TODO filters from view
+  for (const dimension of view.dimensions) {
+    const cubeDimension = dimension.cubeDimensions[0]
+    filters.set(cubeDimension.path.value, [])
+  }
+
+  return {
+    page,
+    pageSize,
+    sortDimension,
+    sortDirection,
+    filters
+  }
+}
+
+function viewFromCube ({ cube }, controls = {
   page: 1,
-  pageSize: 10,
+  pageSize: DEFAULT_PAGE_SIZE,
   sortDimension: null,
   sortDirection: ns.view.Ascending,
+  filters: new Map()
 }) {
   const {
     page,
     pageSize,
     sortDimension,
     sortDirection,
-  } = options
+    filters
+  } = controls
 
   const view = View.fromCube(cube)
 
@@ -35,7 +68,6 @@ function viewFromCube ({ cube }, options = {
     }
   })
   // Add view filters
-  const filters = new Map()
   const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) => dimensionFilters.map(({
     operation,
     arg,
@@ -45,7 +77,7 @@ function viewFromCube ({ cube }, options = {
     return new Filter({
       dimension: viewDimension,
       operation: operation.term,
-      arg,
+      arg
     })
   }))
 
@@ -56,4 +88,4 @@ function viewFromCube ({ cube }, options = {
   return view
 }
 
-export { viewFromCube }
+export { viewFromCube, controlsFromView }
