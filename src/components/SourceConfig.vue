@@ -32,6 +32,14 @@
     </form>
 
     <div v-show="!open" class="flex items-end gap-2">
+      <select-box :options="entityTypes" :model-value="entityType" @update:model-value="updateEntityType">
+        <template v-slot:button="{ selected }">
+          {{ selected }}
+        </template>
+        <template v-slot:option="{ option }">
+          {{ option }}
+        </template>
+      </select-box>
       <cube-selector
         v-if="source"
         :source="source"
@@ -65,6 +73,7 @@ import CubeSelector from './CubeSelector.vue'
 import SelectBox from './SelectBox.vue'
 import ShareUrlButton from './ShareUrlButton.vue'
 
+const entityTypes = ['cubes', 'views']
 const languages = ['de', 'fr', 'it', 'rm', 'en']
 
 export default defineComponent({
@@ -83,8 +92,16 @@ export default defineComponent({
       type: [Array, String],
       required: false,
     },
+    entityType: {
+      type: String,
+      required: false,
+      default: 'cubes',
+      validator (value) {
+        return ['cubes', 'views'].includes(value)
+      },
+    },
   },
-  emits: ['update:source', 'update:cubeUri', 'update:language'],
+  emits: ['update:source', 'update:cubeUri', 'update:language', 'update:entityType'],
 
   setup (props) {
     const { source } = toRefs(props)
@@ -105,6 +122,7 @@ export default defineComponent({
       options,
       open,
       languages,
+      entityTypes,
     }
   },
 
@@ -126,6 +144,11 @@ export default defineComponent({
     updateLanguage (language) {
       const languageList = [language, ...languages, '*']
       this.$emit('update:language', languageList)
+    },
+
+    updateEntityType (entityType) {
+      console.log('updating', entityType)
+      this.$emit('update:entityType', entityType)
     },
   },
 })
