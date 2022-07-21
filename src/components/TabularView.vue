@@ -89,7 +89,7 @@ import PaginationMenu from './PaginationMenu.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import { viewFromCube } from './common/viewFromCube.js'
-import { controlsFromView } from './common/viewFromCube.js'
+import { projectionFromView } from './common/viewFromCube.js'
 
 export default defineComponent({
   name: 'TabularView',
@@ -122,12 +122,12 @@ export default defineComponent({
     } = toRefs(props)
 
     // Get all the controls from the view
-    const controls = controlsFromView(view.value)
-    const filters = ref(controls.filters)
-    const page = ref(controls.page)
-    const pageSize = ref(controls.pageSize)
-    const sortDimension = shallowRef(controls.sortDimension)
-    const sortDirection = shallowRef(controls.sortDirection)
+    const projection = projectionFromView(view.value)
+    const filters = ref(projection.filters)
+    const page = ref(projection.page)
+    const pageSize = ref(projection.pageSize)
+    const sortDimension = shallowRef(projection.sortDimension)
+    const sortDirection = shallowRef(projection.sortDirection)
 
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())

@@ -5,19 +5,29 @@ import * as ns from '../../namespace.js'
 
 const DEFAULT_PAGE_SIZE = 10
 
-function controlsFromView (view) {
+function projectionFromView (view) {
 
   const projection = view.ptr.out(ns.view.projection)
+
   const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_PAGE_SIZE
   const offset = projection.out(ns.view.offset).value
   const page = Math.floor(offset / pageSize) + 1
 
-  const filters = new Map()
+  // @TODO dimensions from view
+  const orderBy = projection.out(ns.view.orderBy)
+
+  const first = orderBy.out(ns.view.dimension).value
+  const second = orderBy.out(ns.view.direction).value
+
+  console.log('results',orderBy, orderBy.toString(), first, second)
+
+
   const sortDimension = null
   const sortDirection = ns.view.Ascending
 
-  // @TODO dimensions from view
+
   // @TODO filters from view
+  const filters = new Map()
   for (const dimension of view.dimensions) {
     const cubeDimension = dimension.cubeDimensions[0]
     filters.set(cubeDimension.path.value, [])
@@ -85,7 +95,9 @@ function viewFromCube ({ cube }, controls = {
     view.addFilter(filter)
   }
 
+  projectionFromView(view)
+
   return view
 }
 
-export { viewFromCube, controlsFromView }
+export { viewFromCube, projectionFromView }
