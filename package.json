@@ -27,7 +27,7 @@
     "core-js": "^3.11.0",
     "process": "^0.11.10",
     "promise-the-world": "^1.0.1",
-    "rdf-cube-view-query": "^1.6.0",
+    "rdf-cube-view-query": "^1.8.2",
     "rdf-ext": "^2.0.1",
     "stream-browserify": "^3.0.0",
     "vue": "^3.0.0",
