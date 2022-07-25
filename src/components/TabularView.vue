@@ -76,6 +76,7 @@
 </template>
 
 <script>
+
 /* eslint-disable */
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
@@ -251,8 +252,8 @@ export default defineComponent({
       this.sortDirection = direction
     },
 
-    updateDimensionFilters (dimension, filters) {
-      this.filters.set(dimension.path.value, filters)
+    updateDimensionFilters (cubeDimension, filters) {
+      this.filters.set(cubeDimension.path.value, filters)
       this.updateObservations()
     },
 

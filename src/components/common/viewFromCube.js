@@ -5,32 +5,47 @@ import * as ns from '../../namespace.js'
 
 const DEFAULT_PAGE_SIZE = 10
 
+function getSorting (projection) {
+  const orderBy = projection.out(ns.view.orderBy)
+  if (orderBy.isList()) {
+    const criterion = [...orderBy.list()][0]
+    return {
+      sortDimension: criterion.out(ns.view.dimension).term,
+      sortDirection: criterion.out(ns.view.direction).term
+    }
+  } else {
+    return {
+      sortDimension: null,
+      sortDirection: ns.view.Ascending
+    }
+  }
+}
+
 function projectionFromView (view) {
 
   const projection = view.ptr.out(ns.view.projection)
-
   const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_PAGE_SIZE
   const offset = projection.out(ns.view.offset).value
   const page = Math.floor(offset / pageSize) + 1
+  const {
+    sortDimension,
+    sortDirection
+  } = getSorting(projection)
 
-  // @TODO dimensions from view
-  const orderBy = projection.out(ns.view.orderBy)
-
-  const first = orderBy.out(ns.view.dimension).value
-  const second = orderBy.out(ns.view.direction).value
-
-  console.log('results',orderBy, orderBy.toString(), first, second)
-
-
-  const sortDimension = null
-  const sortDirection = ns.view.Ascending
-
-
-  // @TODO filters from view
+  // Get the filters in the form of records Path->Set:Filter
+  // @TODO use dimensions directly
   const filters = new Map()
+  const pathsForDimension = {}
   for (const dimension of view.dimensions) {
     const cubeDimension = dimension.cubeDimensions[0]
+    pathsForDimension[dimension.term.value] = cubeDimension.path.value
     filters.set(cubeDimension.path.value, [])
+  }
+  for (const filter of view.filters) {
+    if(filter.length) {
+      const path = pathsForDimension[filter[0].dimension.value]
+      filters.get(path).push(filter)
+    }
   }
 
   return {
@@ -59,28 +74,30 @@ function viewFromCube ({ cube }, controls = {
 
   const view = View.fromCube(cube)
 
+  // A view always comes with a projection
+  const projection = view.ptr.out(ns.view.projection)
+
   // Add view sorting and pagination
-  view.ptr.addOut(ns.view.projection, projection => {
-    const offset = (page - 1) * pageSize
+  const offset = (page - 1) * pageSize
 
-    projection.addOut(ns.view.limit, pageSize)
-    projection.addOut(ns.view.offset, offset)
+  projection.addOut(ns.view.limit, pageSize)
+  projection.addOut(ns.view.offset, offset)
 
-    if (sortDimension) {
-      // Passing `path` because there's a bug in the library that doesn't
-      // handle dimension comparison properly
-      const orderDimension = view.dimension({ cubeDimension: sortDimension.path })
-      const order = projection.blankNode()
-        .addOut(ns.view.dimension, orderDimension.ptr)
-        .addOut(ns.view.direction, sortDirection)
+  if (sortDimension) {
+    // Passing `path` because there's a bug in the library that doesn't
+    // handle dimension comparison properly
+    const orderDimension = view.dimension({ cubeDimension: sortDimension.path })
+    const order = projection.blankNode()
+      .addOut(ns.view.dimension, orderDimension.ptr)
+      .addOut(ns.view.direction, sortDirection)
 
-      projection.addList(ns.view.orderBy, order)
-    }
-  })
+    projection.addList(ns.view.orderBy, order)
+  }
+
   // Add view filters
   const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) => dimensionFilters.map(({
     operation,
-    arg,
+    arg
   }) => {
     const viewDimension = view.dimension({ cubeDimension: dimensionPath })
 
@@ -94,8 +111,6 @@ function viewFromCube ({ cube }, controls = {
   for (const filter of viewFilters) {
     view.addFilter(filter)
   }
-
-  projectionFromView(view)
 
   return view
 }
