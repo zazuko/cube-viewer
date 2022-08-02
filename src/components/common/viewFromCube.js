@@ -1,9 +1,15 @@
 /* eslint-disable */
 
-import { Filter, View } from 'rdf-cube-view-query'
+import { Filter, View, CubeSource } from 'rdf-cube-view-query'
 import * as ns from '../../namespace.js'
 
-const DEFAULT_PAGE_SIZE = 10
+const DEFAULT_CONTROLS = {
+  page: 1,
+  pageSize: 10,
+  sortDimension: null,
+  sortDirection: ns.view.Ascending,
+  filters: new Map()
+}
 
 function getSorting (projection) {
   const orderBy = projection.out(ns.view.orderBy)
@@ -24,7 +30,7 @@ function getSorting (projection) {
 function projectionFromView (view) {
 
   const projection = view.ptr.out(ns.view.projection)
-  const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_PAGE_SIZE
+  const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_CONTROLS.pageSize
   const offset = projection.out(ns.view.offset).value
   const page = Math.floor(offset / pageSize) + 1
   const {
@@ -57,13 +63,7 @@ function projectionFromView (view) {
   }
 }
 
-function viewFromCube ({ cube }, controls = {
-  page: 1,
-  pageSize: DEFAULT_PAGE_SIZE,
-  sortDimension: null,
-  sortDirection: ns.view.Ascending,
-  filters: new Map()
-}) {
+function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
   const {
     page,
     pageSize,
@@ -72,6 +72,7 @@ function viewFromCube ({ cube }, controls = {
     filters
   } = controls
 
+  cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
 
   // A view always comes with a projection

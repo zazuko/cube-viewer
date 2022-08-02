@@ -16,6 +16,7 @@ export async function fetch (callback) {
     const result = await callback()
     return loaded(result)
   } catch (e) {
+    // console.log(e)
     return error(e)
   }
 }

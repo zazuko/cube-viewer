@@ -5,13 +5,13 @@
     </h1>
     <source-config
       v-model:source="source"
-      v-model:cubeUri="cubeUri"
+      v-model:uri="uri"
       v-model:language="language"
       v-model:entityType="entityType"/>
     <viewer
-      v-if="source && cubeUri"
+      v-if="source && uri"
       :source="source"
-      :uri="cubeUri"
+      :uri="uri"
       :language="language"
       :entityType="entityType"
       class="bg-white rounded shadow-lg overflow-x-auto"
@@ -53,7 +53,7 @@ export default defineComponent({
     const language = ref(defaultLanguage)
 
     const entityType = ref(viewUri.value ? 'views' : 'cubes')
-    const uri = ref(cubeUri.value)
+    const uri = ref(cubeUri.value ? cubeUri.value : viewUri.value)
 
     return {
       source,

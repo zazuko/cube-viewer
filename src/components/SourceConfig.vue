@@ -1,9 +1,15 @@
 <template>
+
+  <ol>
+    <li>{{ entityType }}</li>
+    <li>{{ uri }}</li>
+  </ol>
+
   <div class="p-3 bg-white shadow-lg flex justify-between items-center">
     <form @submit.prevent="updateSource" v-if="open" class="w-1/3 flex flex-col gap-2">
       <label class="form-field">
         <span class="label">Endpoint URL</span>
-        <input type="text" v-model="options.endpointUrl" />
+        <input type="text" v-model="options.endpointUrl"/>
       </label>
 
       <label class="form-field">
@@ -41,13 +47,19 @@
         </template>
       </select-box>
       <cube-selector
-        v-if="source"
+        v-if="source && entityType==='cubes' "
         :source="source"
-        :cube-uri="cubeUri"
-        @select="$emit('update:cubeUri', $event)"
+        :cube-uri="uri"
+        @select="$emit('update:uri', $event)"
+      />
+      <view-selector
+        v-if="source && entityType==='views'"
+        :source="source"
+        :view-uri="uri"
+        @select="$emit('update:uri', $event)"
       />
       <button class="button" @click="open = true">
-        <cog-icon class="h-4 w-4" />
+        <cog-icon class="h-4 w-4"/>
         Endpoint config
       </button>
       <select-box :options="languages" :model-value="language[0]" @update:model-value="updateLanguage">
@@ -60,16 +72,18 @@
       </select-box>
     </div>
 
-    <share-url-button v-if="source && cubeUri" :source="source" :cubeUri="cubeUri" />
+    <share-url-button v-if="source && uri" :source="source" :cubeUri="uri"/>
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, toRefs } from 'vue'
-import { Source } from 'rdf-cube-view-query'
-import { CogIcon } from '@heroicons/vue/solid'
 import { XCircleIcon } from '@heroicons/vue/outline'
+import { CogIcon } from '@heroicons/vue/solid'
+import { Source } from 'rdf-cube-view-query'
+import { defineComponent, ref, toRefs } from 'vue'
 import CubeSelector from './CubeSelector.vue'
+import ViewSelector from './ViewSelector.vue'
+
 import SelectBox from './SelectBox.vue'
 import ShareUrlButton from './ShareUrlButton.vue'
 
@@ -78,13 +92,20 @@ const languages = ['de', 'fr', 'it', 'rm', 'en']
 
 export default defineComponent({
   name: 'SourceConfig',
-  components: { CogIcon, CubeSelector, SelectBox, ShareUrlButton, XCircleIcon },
+  components: {
+    CogIcon,
+    CubeSelector,
+    SelectBox,
+    ShareUrlButton,
+    XCircleIcon,
+    ViewSelector,
+  },
   props: {
     source: {
       type: Source,
       required: false,
     },
-    cubeUri: {
+    uri: {
       type: String,
       required: false,
     },
@@ -101,7 +122,7 @@ export default defineComponent({
       },
     },
   },
-  emits: ['update:source', 'update:cubeUri', 'update:language', 'update:entityType'],
+  emits: ['update:source', 'update:uri', 'update:language', 'update:entityType'],
 
   setup (props) {
     const { source } = toRefs(props)

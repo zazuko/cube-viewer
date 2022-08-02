@@ -73,24 +73,24 @@
     v-model:pageSize="pageSize"
     :items-count="observationCount"
   />
+  <textarea rows="100" :value="boundedDescription"></textarea>
 </template>
 
 <script>
 
-/* eslint-disable */
-import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import { LookupSource, View } from 'rdf-cube-view-query'
-import RDF from 'rdf-ext'
+import rdf from 'rdf-ext'
+/* eslint-disable */
+import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
+import * as ns from '../namespace'
+import * as Remote from '../remote'
+import { projectionFromView, viewFromCube } from './common/viewFromCube.js'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
-import * as ns from '../namespace'
-import * as Remote from '../remote'
-import { viewFromCube } from './common/viewFromCube.js'
-import { projectionFromView } from './common/viewFromCube.js'
 
 export default defineComponent({
   name: 'TabularView',
@@ -129,16 +129,14 @@ export default defineComponent({
     const pageSize = ref(projection.pageSize)
     const sortDimension = shallowRef(projection.sortDimension)
     const sortDirection = shallowRef(projection.sortDirection)
-
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())
-
     const queryQueue = queue(1)
 
     function getCurrentView () {
-      if (view.value) {
-        view.value.clear()
-      }
+      // if (view.value) {
+      //   view.value.clear()
+      // }
       return viewFromCube({ cube: cube.value }, {
         page: page.value,
         pageSize: pageSize.value,
@@ -148,13 +146,18 @@ export default defineComponent({
       })
     }
 
+    const currentView = ref(view.value)
+    const boundedDescription = ref(getBoundedDescription(view.value.dataset, view.value.term))
+
     const updateObservations = async () => {
-      const currentView = getCurrentView()
-      await fetchObservations(currentView)
+      currentView.value = getCurrentView()
+      boundedDescription.value = getBoundedDescription(currentView.value.dataset, currentView.value.term)
+      await fetchObservations(currentView.value)
     }
-    watch([cube, page, pageSize, sortDimension, sortDirection, filters], updateObservations)
+    watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
 
     const fetchObservations = async (currentView) => {
+
       observations.value = Remote.loading()
 
       if (!currentView) return
@@ -203,7 +206,8 @@ export default defineComponent({
       observations,
       observationCount,
       labels,
-      updateObservations
+      updateObservations,
+      boundedDescription
     }
   },
 
@@ -272,7 +276,7 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   const cubeDimension = dimension.cubeDimensions[0]
   const path = cubeDimension.path
 
-  const dimensionLabels = RDF.clownface({ dataset: RDF.dataset() })
+  const dimensionLabels = rdf.clownface({ dataset: rdf.dataset() })
 
   if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
     const view = new View({ parent: cubeSource })
@@ -296,4 +300,19 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   }
   return [path, dimensionLabels]
 }
+
+function getBoundedDescription (dataset, term) {
+  const descriptionWithBlankNodes = rdf.traverser(({
+    dataset,
+    level,
+    quad
+  }) => level === 0 || quad.subject.termType === 'BlankNode')
+  const result = rdf.dataset()
+  result.addAll(descriptionWithBlankNodes.match({
+    term,
+    dataset
+  }))
+  return result.toString()
+}
+
 </script>
