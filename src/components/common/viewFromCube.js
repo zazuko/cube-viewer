@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { Filter, View, CubeSource } from 'rdf-cube-view-query'
+import { Filter, View, CubeSource, Node } from 'rdf-cube-view-query'
 import * as ns from '../../namespace.js'
 
 const DEFAULT_CONTROLS = {
@@ -63,7 +63,9 @@ function projectionFromView (view) {
   }
 }
 
-function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
+
+function updateViewControls( {view,controls}){
+
   const {
     page,
     pageSize,
@@ -72,15 +74,18 @@ function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
     filters
   } = controls
 
-  cube.source = CubeSource.fromSource(cube.source, cube)
-  const view = View.fromCube(cube)
+  const oldControls = view.controls
+  if (oldControls) {
+    oldControls.clear()
+  }
+
+  const updatedControls = new Node({parent:view, term:view.term, dataset:view.dataset, graph:view.graph})
 
   // A view always comes with a projection
-  const projection = view.ptr.out(ns.view.projection)
+  const projection = updatedControls.ptr.out(ns.view.projection)
 
   // Add view sorting and pagination
   const offset = (page - 1) * pageSize
-
   projection.addOut(ns.view.limit, pageSize)
   projection.addOut(ns.view.offset, offset)
 
@@ -91,7 +96,6 @@ function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
     const order = projection.blankNode()
       .addOut(ns.view.dimension, orderDimension.ptr)
       .addOut(ns.view.direction, sortDirection)
-
     projection.addList(ns.view.orderBy, order)
   }
 
@@ -101,7 +105,6 @@ function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
     arg
   }) => {
     const viewDimension = view.dimension({ cubeDimension: dimensionPath })
-
     return new Filter({
       dimension: viewDimension,
       operation: operation.term,
@@ -112,8 +115,15 @@ function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
   for (const filter of viewFilters) {
     view.addFilter(filter)
   }
-
   return view
 }
 
-export { viewFromCube, projectionFromView }
+
+function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
+  cube.source = CubeSource.fromSource(cube.source, cube)
+  const view = View.fromCube(cube)
+  updateViewControls({ view,controls })
+  return view
+}
+
+export { viewFromCube, projectionFromView, updateViewControls }

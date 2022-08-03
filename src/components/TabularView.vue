@@ -3,10 +3,9 @@
   <table class="h-1">
     <thead>
     <tr>
-      <th v-for="dimension in cube.dimensions" :key="dimension.ptr.term.value"
+      <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
           class="border border-b-2 align-top text-left h-full">
         <dimension-header
-          :cube="cube"
           :dimension="dimension"
           :language="language"
           :labels="labels[dimension.path.value]"
@@ -19,7 +18,7 @@
       </th>
     </tr>
     <tr v-show="filtersSummary.length > 0">
-      <td :colspan="cube.dimensions.length" class="border px-2 py-2">
+      <td :colspan="cubeDimensions.length" class="border px-2 py-2">
         <div class="flex gap-2 justify-start">
                     <span v-for="(filter, index) in filtersSummary" :key="index"
                           class="tag bg-gray-100 rounded-md flex items-center gap-1">
@@ -34,14 +33,14 @@
     </thead>
     <tbody v-if="observations.isLoading">
     <tr v-for="i in Array(pageSize)" :key="i">
-      <td :colspan="cube.dimensions.length" class="border px-2 py-2">
+      <td :colspan="cubeDimensions.length" class="border px-2 py-2">
         <loading-icon/>
       </td>
     </tr>
     </tbody>
     <tbody v-else-if="observations.error">
     <tr>
-      <td :colspan="cube.dimensions.length" class="border px-2 py-1">
+      <td :colspan="cubeDimensions.length" class="border px-2 py-1">
         {{ observations.error }}
       </td>
     </tr>
@@ -49,7 +48,7 @@
     <tbody v-else>
     <tr v-for="(observation, index) in observations.data" :key="index">
       <td
-        v-for="dimension in cube.dimensions"
+        v-for="dimension in cubeDimensions"
         :key="dimension.ptr.term.value"
         class="border px-2 py-1 whitespace-nowrap"
         :class="{
@@ -59,7 +58,7 @@
       >
         <observation-value
           :value="observation[dimension.path.value]"
-          :cube="cube"
+          :clownface="data"
           :labels="labels[dimension.path.value]"
           :language="language"
         />
@@ -78,11 +77,12 @@
 
 <script>
 
+/* eslint-disable */
+
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import { LookupSource, View } from 'rdf-cube-view-query'
 import rdf from 'rdf-ext'
-/* eslint-disable */
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
@@ -137,6 +137,16 @@ export default defineComponent({
       // if (view.value) {
       //   view.value.clear()
       // }
+      // return updateViewControls({
+      //   view: view.value,
+      //   controls: {
+      //     page: page.value,
+      //     pageSize: pageSize.value,
+      //     sortDimension: sortDimension.value,
+      //     sortDirection: sortDirection.value,
+      //     filters: filters.value
+      //   }
+      // })
       return viewFromCube({ cube: cube.value }, {
         page: page.value,
         pageSize: pageSize.value,
@@ -147,11 +157,19 @@ export default defineComponent({
     }
 
     const currentView = ref(view.value)
-    const boundedDescription = ref(getBoundedDescription(view.value.dataset, view.value.term))
+    const { dataset } = getBoundedDescription({
+      term: currentView.value.term,
+      dataset: currentView.value.dataset
+    })
+    const boundedDescription = ref(dataset.toString())
 
     const updateObservations = async () => {
       currentView.value = getCurrentView()
-      boundedDescription.value = getBoundedDescription(currentView.value.dataset, currentView.value.term)
+      const { dataset } = getBoundedDescription({
+        term: currentView.value.term,
+        dataset: currentView.value.dataset
+      })
+      boundedDescription.value = dataset.toString()
       await fetchObservations(currentView.value)
     }
     watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
@@ -197,6 +215,9 @@ export default defineComponent({
     onMounted(() => labels.value = fetchLabels(view.value))
     watch(view, () => labels.value = fetchLabels(view.value))
 
+    const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0])
+    const data = view.value.ptr.node(view.value.dimensions[0].cube)
+
     return {
       page,
       pageSize,
@@ -207,7 +228,9 @@ export default defineComponent({
       observationCount,
       labels,
       updateObservations,
-      boundedDescription
+      boundedDescription,
+      cubeDimensions,
+      data
     }
   },
 
@@ -301,7 +324,10 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   return [path, dimensionLabels]
 }
 
-function getBoundedDescription (dataset, term) {
+function getBoundedDescription ({
+  term,
+  dataset
+}) {
   const descriptionWithBlankNodes = rdf.traverser(({
     dataset,
     level,
@@ -312,7 +338,10 @@ function getBoundedDescription (dataset, term) {
     term,
     dataset
   }))
-  return result.toString()
+  return {
+    term,
+    dataset: result
+  }
 }
 
 </script>

@@ -33,6 +33,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { Source } from 'rdf-cube-view-query'

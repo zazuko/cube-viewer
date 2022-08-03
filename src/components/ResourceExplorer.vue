@@ -12,7 +12,7 @@
           </button>
         </dialog-title>
 
-        <resource-details :uri="uri" :cube="cube" />
+        <resource-details :uri="uri" :clownface="clownface" />
       </div>
     </div>
   </Dialog>
@@ -23,7 +23,6 @@ import { defineComponent } from 'vue'
 import { Dialog, DialogOverlay, DialogTitle } from '@headlessui/vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import { Term } from '@rdfjs/data-model'
-import { Cube } from 'rdf-cube-view-query'
 import ResourceDetails from './ResourceDetails.vue'
 
 export default defineComponent({
@@ -32,7 +31,7 @@ export default defineComponent({
   props: {
     isOpen: { type: Boolean, required: true },
     uri: { type: Term, required: true },
-    cube: { type: Cube, required: true },
+    clownface: { type: Object, required: true },
   },
   emits: ['close'],
 })

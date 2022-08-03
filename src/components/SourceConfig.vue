@@ -1,10 +1,5 @@
 <template>
 
-  <ol>
-    <li>{{ entityType }}</li>
-    <li>{{ uri }}</li>
-  </ol>
-
   <div class="p-3 bg-white shadow-lg flex justify-between items-center">
     <form @submit.prevent="updateSource" v-if="open" class="w-1/3 flex flex-col gap-2">
       <label class="form-field">
