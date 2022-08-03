@@ -20,7 +20,6 @@
         </popover-button>
         <popover-panel class="z-10 absolute bg-white border rounded shadow-md p-2">
           <dimension-filters
-            :cube="cube"
             :dimension="dimension"
             :filters="filters"
             :labels="labels"
@@ -46,7 +45,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { Cube, CubeDimension } from 'rdf-cube-view-query'
+import { CubeDimension } from 'rdf-cube-view-query'
 import { Term } from '@rdfjs/data-model'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import { AnnotationIcon, FilterIcon } from '@heroicons/vue/outline'
@@ -74,10 +73,6 @@ export default defineComponent({
     ScaleTypeIcon,
   },
   props: {
-    cube: {
-      type: Cube,
-      required: true,
-    },
     dimension: {
       type: CubeDimension,
       required: true,
@@ -107,15 +102,15 @@ export default defineComponent({
 
   computed: {
     label () {
-      return this.dimension.out(ns.schema.name, { language: this.language }).value
+      return this.dimension.ptr.out(ns.schema.name, { language: this.language }).value
     },
 
     description () {
-      return this.dimension.out(ns.schema.comment, { language: this.language }).value
+      return this.dimension.ptr.out(ns.schema.comment, { language: this.language }).value
     },
 
     property () {
-      return this.dimension.out(ns.sh.path).value
+      return this.dimension.ptr.out(ns.sh.path).value
     },
 
     isMeasure () {
@@ -131,11 +126,11 @@ export default defineComponent({
     },
 
     dataKind () {
-      return this.dimension.out(ns.meta.dataKind)
+      return this.dimension.ptr.out(ns.meta.dataKind)
     },
 
     scaleType () {
-      return this.dimension.out(ns.qudt.scaleType)
+      return this.dimension.ptr.out(ns.qudt.scaleType)
     },
 
     isSortDimension () {

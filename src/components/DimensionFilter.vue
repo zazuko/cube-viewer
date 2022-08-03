@@ -8,11 +8,11 @@
     </SelectBox>
     <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
       <template v-slot:button="{ selected }">
-        <term-display v-if="selected" :term="resourceLabel(selected)" :base="cube.term.value" />
+        <term-display v-if="selected" :term="resourceLabel(selected)" :base="dimension.cube?.value" />
         <span v-else class="text-gray-500">Value</span>
       </template>
       <template v-slot:option="{ option }">
-        <term-display :term="resourceLabel(option)" :base="cube.term.value" />
+        <term-display :term="resourceLabel(option)" :base="dimension.cube?.value" />
       </template>
     </SelectBox>
     <div v-else>
@@ -28,7 +28,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { Cube, CubeDimension } from 'rdf-cube-view-query'
+import { CubeDimension } from 'rdf-cube-view-query'
 import SelectBox from './SelectBox.vue'
 import TermDisplay from './TermDisplay.vue'
 import TermInput from './TermInput.vue'
@@ -48,10 +48,6 @@ export default defineComponent({
   name: 'DimensionFilters',
   components: { SelectBox, TermDisplay, TermInput },
   props: {
-    cube: {
-      type: Cube,
-      required: true,
-    },
     dimension: {
       type: CubeDimension,
       required: true,
@@ -90,7 +86,7 @@ export default defineComponent({
     resourceLabel (term) {
       return (
         this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
-        this.cube.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
+        this.dimension.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
         term
       )
     },
