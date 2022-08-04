@@ -72,13 +72,20 @@
     v-model:pageSize="pageSize"
     :items-count="observationCount"
   />
-  <textarea rows="100" :value="boundedDescription"></textarea>
+  <Editbox
+    format="text/turtle"
+    ref="resultBoxRef"
+    :quads="viewQuads"
+    readOnly="false"
+    has-toggle="true"
+    title="View"
+  />
 </template>
 
 <script>
 
 /* eslint-disable */
-
+import Editbox from './rdf/Editbox.vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import { LookupSource, View } from 'rdf-cube-view-query'
@@ -99,7 +106,8 @@ export default defineComponent({
     LoadingIcon,
     ObservationValue,
     PaginationMenu,
-    XCircleIcon
+    XCircleIcon,
+    Editbox,
   },
   props: {
     view: {
@@ -142,11 +150,11 @@ export default defineComponent({
     }
 
     const currentView = ref(view.value)
-    const boundedDescription = ref(viewToN3(currentView.value))
+    const viewQuads = ref(viewToQuads(currentView.value))
 
     const updateObservations = async () => {
       currentView.value = getCurrentView()
-      boundedDescription.value = viewToN3(currentView.value)
+      viewQuads.value = viewToQuads(currentView.value)
       await fetchObservations(currentView.value)
     }
     watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
@@ -205,7 +213,7 @@ export default defineComponent({
       observationCount,
       labels,
       updateObservations,
-      boundedDescription,
+      viewQuads,
       cubeDimensions,
       data
     }
@@ -301,6 +309,15 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
     }
   }
   return [path, dimensionLabels]
+}
+
+
+function viewToQuads(view) {
+  const { dataset } = getBoundedDescription({
+    term: view.term,
+    dataset: view.dataset
+  })
+  return [...dataset]
 }
 
 function viewToN3(view) {

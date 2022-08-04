@@ -31,7 +31,8 @@
     "rdf-ext": "^2.0.1",
     "stream-browserify": "^3.0.0",
     "vue": "^3.0.0",
-    "vue3-webcomponent-wrapper": "^0.1.4"
+    "vue3-webcomponent-wrapper": "^0.1.4",
+    "@rdfjs-elements/rdf-editor": "^0.5.3"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~5.0.0-rc.1",

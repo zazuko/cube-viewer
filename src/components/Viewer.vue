@@ -44,6 +44,18 @@ import * as Remote from '../remote'
 import TabularView from './TabularView.vue'
 import { viewFromCube } from './common/viewUtils.js'
 
+
+async function getView(source, entityType, {uri, data}){
+  if (entityType === 'cubes') {
+    const cube = await source.cube(uri)
+    return viewFromCube({ cube })
+  } else if(entityType === 'views') {
+    return await source.view(uri)
+  } else {
+    throw Error(`entityType ${entityType} not recognized`)
+  }
+}
+
 export default defineComponent({
   name: 'ItemViewer',
   components: {
@@ -60,6 +72,9 @@ export default defineComponent({
     uri: {
       type: String,
     },
+    entityType: {
+      type: String,
+    },
     language: {
       type: [String, Array],
       required: false,
@@ -70,6 +85,7 @@ export default defineComponent({
     const {
       source,
       uri,
+      entityType,
     } = toRefs(props)
 
     const item = shallowRef(Remote.loading())

@@ -57,7 +57,6 @@ export default defineComponent({
 
     return {
       source,
-      cubeUri,
       language,
       entityType,
       uri,
