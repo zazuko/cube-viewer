@@ -27,7 +27,7 @@
           />
         </div>
       </header>
-      <tabular-view v-if="view" :view="view" :cube="cube" :language="language"/>
+      <tabular-view v-if="view" :view="view" :language="language"/>
     </div>
   </div>
 </template>
@@ -42,7 +42,7 @@ import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import TabularView from './TabularView.vue'
-import { viewFromCube } from './common/viewFromCube.js'
+import { viewFromCube } from './common/viewUtils.js'
 
 export default defineComponent({
   name: 'ItemViewer',
@@ -113,8 +113,7 @@ export default defineComponent({
       if (view.value) {
         view.value.clear()
       }
-      cube.value = item.value.data
-      view.value = viewFromCube({ cube: cube.value })
+      view.value = viewFromCube({ cube: item.value.data })
     }
 
     watch([item], update)

@@ -86,7 +86,7 @@ import rdf from 'rdf-ext'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { projectionFromView, viewFromCube } from './common/viewFromCube.js'
+import { projectionFromView, updateViewProjection } from './common/viewUtils.js'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
@@ -102,10 +102,6 @@ export default defineComponent({
     XCircleIcon
   },
   props: {
-    cube: {
-      type: Object,
-      required: true
-    },
     view: {
       type: Object,
       required: true
@@ -118,8 +114,7 @@ export default defineComponent({
 
   setup (props) {
     const {
-      view,
-      cube
+      view
     } = toRefs(props)
 
     // Get all the controls from the view
@@ -134,42 +129,24 @@ export default defineComponent({
     const queryQueue = queue(1)
 
     function getCurrentView () {
-      // if (view.value) {
-      //   view.value.clear()
-      // }
-      // return updateViewControls({
-      //   view: view.value,
-      //   controls: {
-      //     page: page.value,
-      //     pageSize: pageSize.value,
-      //     sortDimension: sortDimension.value,
-      //     sortDirection: sortDirection.value,
-      //     filters: filters.value
-      //   }
-      // })
-      return viewFromCube({ cube: cube.value }, {
-        page: page.value,
-        pageSize: pageSize.value,
-        sortDimension: sortDimension.value,
-        sortDirection: sortDirection.value,
-        filters: filters.value
+      return updateViewProjection({
+        view: view.value,
+        controls: {
+          page: page.value,
+          pageSize: pageSize.value,
+          sortDimension: sortDimension.value,
+          sortDirection: sortDirection.value,
+          filters: filters.value
+        }
       })
     }
 
     const currentView = ref(view.value)
-    const { dataset } = getBoundedDescription({
-      term: currentView.value.term,
-      dataset: currentView.value.dataset
-    })
-    const boundedDescription = ref(dataset.toString())
+    const boundedDescription = ref(viewToN3(currentView.value))
 
     const updateObservations = async () => {
       currentView.value = getCurrentView()
-      const { dataset } = getBoundedDescription({
-        term: currentView.value.term,
-        dataset: currentView.value.dataset
-      })
-      boundedDescription.value = dataset.toString()
+      boundedDescription.value = viewToN3(currentView.value)
       await fetchObservations(currentView.value)
     }
     watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
@@ -238,7 +215,8 @@ export default defineComponent({
 
     filtersSummary () {
       const language = this.language
-      const cube = this.view
+      const ptr = this.view.ptr
+      const cube = this.view.dimensions[0].cube
 
       return [...this.filters.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
         dimensionFilters.map(({
@@ -246,12 +224,13 @@ export default defineComponent({
           operation,
           arg
         }, index) => {
+
           const dimensionLabel = dimension.out(ns.schema.name, { language }).value
           const dimensionValueLabels = this.labels[dimension.path.value]
           const valueLabel = (
             dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
-            cube.ptr.node(arg).out(ns.schema.name, { language }).value ||
-            ns.shrink(arg.value, this.view.term.value)
+            ptr.node(arg).out(ns.schema.name, { language }).value ||
+            ns.shrink(arg.value, cube.value)
           )
 
           return {
@@ -324,6 +303,14 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   return [path, dimensionLabels]
 }
 
+function viewToN3(view) {
+  const { dataset } = getBoundedDescription({
+    term: view.term,
+    dataset: view.dataset
+  })
+  return dataset.toString()
+}
+
 function getBoundedDescription ({
   term,
   dataset
@@ -332,7 +319,7 @@ function getBoundedDescription ({
     dataset,
     level,
     quad
-  }) => level === 0 || quad.subject.termType === 'BlankNode')
+  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level <5))
   const result = rdf.dataset()
   result.addAll(descriptionWithBlankNodes.match({
     term,

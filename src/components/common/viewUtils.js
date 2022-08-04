@@ -64,7 +64,7 @@ function projectionFromView (view) {
 }
 
 
-function updateViewControls( {view,controls}){
+function updateViewProjection( {view,controls}){
 
   const {
     page,
@@ -74,21 +74,27 @@ function updateViewControls( {view,controls}){
     filters
   } = controls
 
-  const oldControls = view.controls
-  if (oldControls) {
-    oldControls.clear()
-  }
-
-  const updatedControls = new Node({parent:view, term:view.term, dataset:view.dataset, graph:view.graph})
-
   // A view always comes with a projection
-  const projection = updatedControls.ptr.out(ns.view.projection)
+  const projection = view.ptr.out(ns.view.projection)
 
-  // Add view sorting and pagination
+  // Delete previous pagination
+  projection.deleteOut([ns.view.limit,ns.view.offset])
+
+  // Add new pagination
   const offset = (page - 1) * pageSize
   projection.addOut(ns.view.limit, pageSize)
   projection.addOut(ns.view.offset, offset)
 
+  // Delete previous ordering
+  const orderByList = projection.out(ns.view.orderBy)
+  if (orderByList.isList()) {
+    for (const ordering of orderByList.list()){
+      ordering.deleteOut([ns.view.dimension,ns.view.direction])
+    }
+    projection.deleteList(ns.view.orderBy)
+  }
+
+  // Add new ordering
   if (sortDimension) {
     // Passing `path` because there's a bug in the library that doesn't
     // handle dimension comparison properly
@@ -99,7 +105,11 @@ function updateViewControls( {view,controls}){
     projection.addList(ns.view.orderBy, order)
   }
 
-  // Add view filters
+  // Delete old filters
+  view.ptr.out(ns.view.filter).deleteOut()
+  view.ptr.deleteOut(ns.view.filter)
+
+  // Add new view filters
   const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) => dimensionFilters.map(({
     operation,
     arg
@@ -122,8 +132,8 @@ function updateViewControls( {view,controls}){
 function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
   cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
-  updateViewControls({ view,controls })
+  updateViewProjection({ view,controls })
   return view
 }
 
-export { viewFromCube, projectionFromView, updateViewControls }
+export { viewFromCube, projectionFromView, updateViewProjection }
