@@ -136,6 +136,8 @@ export default defineComponent({
     const observationCount = ref(Remote.loading())
     const queryQueue = queue(1)
 
+    const cubeTerm = view.value.dimensions[0].cube
+
     function getCurrentView () {
       return updateViewProjection({
         view: view.value,
@@ -150,11 +152,11 @@ export default defineComponent({
     }
 
     const currentView = ref(view.value)
-    const viewQuads = ref(viewToQuads(currentView.value))
+    const viewQuads = ref(viewToQuads(currentView.value, cubeTerm))
 
     const updateObservations = async () => {
       currentView.value = getCurrentView()
-      viewQuads.value = viewToQuads(currentView.value)
+      viewQuads.value = viewToQuads(currentView.value, cubeTerm)
       await fetchObservations(currentView.value)
     }
     watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
@@ -201,7 +203,7 @@ export default defineComponent({
     watch(view, () => labels.value = fetchLabels(view.value))
 
     const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0])
-    const data = view.value.ptr.node(view.value.dimensions[0].cube)
+    const data = view.value.ptr.node(cubeTerm)
 
     return {
       page,
@@ -312,20 +314,17 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
 }
 
 
-function viewToQuads(view) {
+function viewToQuads(view, cubeTerm) {
   const { dataset } = getBoundedDescription({
     term: view.term,
     dataset: view.dataset
   })
-  return [...dataset]
-}
 
-function viewToN3(view) {
-  const { dataset } = getBoundedDescription({
-    term: view.term,
-    dataset: view.dataset
-  })
-  return dataset.toString()
+  // Add the cube constraints, which needed by the cube-viewer
+  for (const quad of view.dataset.match(cubeTerm, ns.cube.observationConstraint, null)) {
+    dataset.add(quad)
+  }
+ return [...dataset]
 }
 
 function getBoundedDescription ({
@@ -342,6 +341,7 @@ function getBoundedDescription ({
     term,
     dataset
   }))
+
   return {
     term,
     dataset: result
