@@ -1,6 +1,5 @@
-/* eslint-disable */
 
-import { Filter, View, CubeSource, Node } from 'rdf-cube-view-query'
+import { Filter, View, CubeSource } from 'rdf-cube-view-query'
 import * as ns from '../../namespace.js'
 
 const DEFAULT_CONTROLS = {
@@ -8,7 +7,7 @@ const DEFAULT_CONTROLS = {
   pageSize: 10,
   sortDimension: null,
   sortDirection: ns.view.Ascending,
-  filters: new Map()
+  filters: new Map(),
 }
 
 function getSorting (projection) {
@@ -17,25 +16,24 @@ function getSorting (projection) {
     const criterion = [...orderBy.list()][0]
     return {
       sortDimension: criterion.out(ns.view.dimension).term,
-      sortDirection: criterion.out(ns.view.direction).term
+      sortDirection: criterion.out(ns.view.direction).term,
     }
   } else {
     return {
       sortDimension: null,
-      sortDirection: ns.view.Ascending
+      sortDirection: ns.view.Ascending,
     }
   }
 }
 
 function projectionFromView (view) {
-
   const projection = view.ptr.out(ns.view.projection)
   const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_CONTROLS.pageSize
   const offset = projection.out(ns.view.offset).value
   const page = Math.floor(offset / pageSize) + 1
   const {
     sortDimension,
-    sortDirection
+    sortDirection,
   } = getSorting(projection)
 
   // Get the filters in the form of records Path->Set:Filter
@@ -50,7 +48,7 @@ function projectionFromView (view) {
     }
   }
   for (const filter of view.filters) {
-    if(filter.length) {
+    if (filter.length) {
       const path = pathsForDimension[filter[0].dimension.value]
       filters.get(path).push(filter)
     }
@@ -61,26 +59,24 @@ function projectionFromView (view) {
     pageSize,
     sortDimension,
     sortDirection,
-    filters
+    filters,
   }
 }
 
-
-function updateViewProjection( {view,controls}){
-
+function updateViewProjection ({ view, controls }) {
   const {
     page,
     pageSize,
     sortDimension,
     sortDirection,
-    filters
+    filters,
   } = controls
 
   // A view always comes with a projection
   const projection = view.ptr.out(ns.view.projection)
 
   // Delete previous pagination
-  projection.deleteOut([ns.view.limit,ns.view.offset])
+  projection.deleteOut([ns.view.limit, ns.view.offset])
 
   // Add new pagination
   const offset = (page - 1) * pageSize
@@ -90,8 +86,8 @@ function updateViewProjection( {view,controls}){
   // Delete previous ordering
   const orderByList = projection.out(ns.view.orderBy)
   if (orderByList.isList()) {
-    for (const ordering of orderByList.list()){
-      ordering.deleteOut([ns.view.dimension,ns.view.direction])
+    for (const ordering of orderByList.list()) {
+      ordering.deleteOut([ns.view.dimension, ns.view.direction])
     }
     projection.deleteList(ns.view.orderBy)
   }
@@ -114,13 +110,13 @@ function updateViewProjection( {view,controls}){
   // Add new view filters
   const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) => dimensionFilters.map(({
     operation,
-    arg
+    arg,
   }) => {
     const viewDimension = view.dimension({ cubeDimension: dimensionPath })
     return new Filter({
       dimension: viewDimension,
       operation: operation.term,
-      arg
+      arg,
     })
   }))
 
@@ -130,11 +126,10 @@ function updateViewProjection( {view,controls}){
   return view
 }
 
-
 function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
   cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
-  updateViewProjection({ view,controls })
+  updateViewProjection({ view, controls })
   return view
 }
 

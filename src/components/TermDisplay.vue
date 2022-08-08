@@ -26,8 +26,12 @@ export default defineComponent({
 
   computed: {
     shrunk () {
-      if (this.term.termType === 'NamedNode') {
-        return ns.shrink(this.term.value, this.base)
+      if (this.term.termType === 'NamedNode' && this.base) {
+        const result = ns.shrink(this.term.value, this.base)
+        if (result === this.term.value) { // If the term was not modified, try again with a shorter base
+          return ns.shrink(this.term.value, this.base.split('/').splice(0, this.base.split('/').length - 1).join('/'))
+        }
+        return result
       } else {
         return this.term.value
       }

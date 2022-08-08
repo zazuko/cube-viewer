@@ -84,7 +84,6 @@
 
 <script>
 
-/* eslint-disable */
 import Editbox from './rdf/Editbox.vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
@@ -112,17 +111,17 @@ export default defineComponent({
   props: {
     view: {
       type: Object,
-      required: true
+      required: true,
     },
     language: {
       type: [String, Array],
-      required: true
-    }
+      required: true,
+    },
   },
 
   setup (props) {
     const {
-      view
+      view,
     } = toRefs(props)
 
     // Get all the controls from the view
@@ -146,8 +145,8 @@ export default defineComponent({
           pageSize: pageSize.value,
           sortDimension: sortDimension.value,
           sortDirection: sortDirection.value,
-          filters: filters.value
-        }
+          filters: filters.value,
+        },
       })
     }
 
@@ -162,7 +161,6 @@ export default defineComponent({
     watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
 
     const fetchObservations = async (currentView) => {
-
       observations.value = Remote.loading()
 
       if (!currentView) return
@@ -181,7 +179,6 @@ export default defineComponent({
     // Labels are stored as Record<dimensionURI, Clownface>
     const labels = ref({})
     const fetchLabels = async (currentView) => {
-
       if (!currentView || !currentView) return
 
       const dimensions = currentView.dimensions
@@ -190,16 +187,18 @@ export default defineComponent({
         return queryQueue.add(async () => fetchDimensionLabels(dimension, currentView))
       }))
 
-      return dimensionsWithLabels.filter(notNull=>notNull).reduce(
+      return dimensionsWithLabels.filter(notNull => notNull).reduce(
         (acc, [dimensionPath, dimensionLabels]) => ({
           ...acc,
-          [dimensionPath.value]: dimensionLabels
+          [dimensionPath.value]: dimensionLabels,
         }),
         {}
       )
     }
 
+    // eslint-disable-next-line no-return-assign
     onMounted(() => labels.value = fetchLabels(view.value))
+    // eslint-disable-next-line no-return-assign
     watch(view, () => labels.value = fetchLabels(view.value))
 
     const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
@@ -217,7 +216,7 @@ export default defineComponent({
       updateObservations,
       viewQuads,
       cubeDimensions,
-      data
+      data,
     }
   },
 
@@ -232,9 +231,8 @@ export default defineComponent({
         dimensionFilters.map(({
           dimension,
           operation,
-          arg
+          arg,
         }, index) => {
-
           const dimensionLabel = dimension.out(ns.schema.name, { language }).value
           const dimensionValueLabels = this.labels[dimension.path.value]
           const valueLabel = (
@@ -246,11 +244,11 @@ export default defineComponent({
           return {
             dimensionPath,
             index,
-            label: `${dimensionLabel} ${operation.label} ${valueLabel}`
+            label: `${dimensionLabel} ${operation.label} ${valueLabel}`,
           }
         })
       )
-    }
+    },
   },
 
   methods: {
@@ -275,16 +273,15 @@ export default defineComponent({
 
     removeFilter ({
       dimensionPath,
-      index
+      index,
     }) {
       this.filters.get(dimensionPath).splice(index, 1)
       this.updateObservations()
-    }
-  }
+    },
+  },
 })
 
 const fetchDimensionLabels = async (dimension, cubeSource) => {
-
   const cubeDimension = dimension.cubeDimensions[0]
   if (!cubeDimension) return undefined
   const path = cubeDimension.path
@@ -301,7 +298,7 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
       source,
       path: ns.schema.name,
       join: dimension,
-      as: ns.schema.name
+      as: ns.schema.name,
     }))
 
     const data = await view.observations()
@@ -314,38 +311,37 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   return [path, dimensionLabels]
 }
 
-
-function viewToQuads(view, cubeTerm) {
+function viewToQuads (view, cubeTerm) {
   const { dataset } = getBoundedDescription({
     term: view.term,
-    dataset: view.dataset
+    dataset: view.dataset,
   })
 
   // Add the cube constraints, which needed by the cube-viewer
   for (const quad of view.dataset.match(cubeTerm, ns.cube.observationConstraint, null)) {
     dataset.add(quad)
   }
- return [...dataset]
+  return [...dataset]
 }
 
 function getBoundedDescription ({
   term,
-  dataset
+  dataset,
 }) {
   const descriptionWithBlankNodes = rdf.traverser(({
     dataset,
     level,
-    quad
-  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level <5))
+    quad,
+  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 5))
   const result = rdf.dataset()
   result.addAll(descriptionWithBlankNodes.match({
     term,
-    dataset
+    dataset,
   }))
 
   return {
     term,
-    dataset: result
+    dataset: result,
   }
 }
 

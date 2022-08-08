@@ -20,7 +20,6 @@
 </template>
 
 <script>
-/* eslint-disable */
 import { defineComponent, ref } from 'vue'
 import Viewer from './components/Viewer.vue'
 

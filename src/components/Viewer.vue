@@ -35,7 +35,6 @@
 <script>
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { Source } from 'rdf-cube-view-query'
-/* eslint-disable */
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
@@ -48,7 +47,7 @@ async function fetchView ({
   entityType,
   uri,
   data,
-  source
+  source,
 }) {
   if (entityType === 'cubes') {
     const cube = await source.cube(uri)
@@ -107,7 +106,7 @@ export default defineComponent({
         view.value = await fetchView({
           source: source.value,
           entityType: entityType.value,
-          uri: uri.value
+          uri: uri.value,
         })
         const itemData = view.value
 
@@ -131,32 +130,18 @@ export default defineComponent({
     onMounted(fetchItem)
     watch(uri, fetchItem)
 
-    // const view = shallowRef(null)
-    //
-    // const update = () => {
-    //   if (!item.value.data) return
-    //
-    //   if (view.value) {
-    //     view.value.clear()
-    //   }
-    //   view.value = viewFromCube({ cube: item.value.data })
-    // }
-    //
-    // watch([item], update)
-
     const isMetadataOpen = ref(false)
 
     return {
       item,
       isMetadataOpen,
-      view
+      view,
     }
   },
 
   computed: {
 
     title () {
-
       if (!this.item.data) {
         return null
       }
