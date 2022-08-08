@@ -163,7 +163,6 @@ export default defineComponent({
     },
 
     updateEntityType (entityType) {
-      console.log('updating', entityType)
       this.$emit('update:entityType', entityType)
     },
   },

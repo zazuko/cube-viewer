@@ -29,8 +29,13 @@ const isOpen = ref(false)
 
 <template>
   <div>
+
     <template v-if="hasToggle">
       <h4 class="clickable" @click="isOpen=!isOpen">{{ title?title:'undefined' }}</h4>
+      <div v-if="parseError">
+        {{ parseError }}
+      </div>
+
       <rdf-editor v-if="isOpen"
                   :format="format"
                   :quads="quads"
@@ -55,9 +60,7 @@ const isOpen = ref(false)
 
       </div>
     </template>
-    <div v-if="parseError">
-      {{ parseError }}
-    </div>
+
   </div>
 </template>
 <style>

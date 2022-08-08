@@ -44,8 +44,10 @@ function projectionFromView (view) {
   const pathsForDimension = {}
   for (const dimension of view.dimensions) {
     const cubeDimension = dimension.cubeDimensions[0]
-    pathsForDimension[dimension.term.value] = cubeDimension.path.value
-    filters.set(cubeDimension.path.value, [])
+    if (cubeDimension) {
+      pathsForDimension[dimension.term.value] = cubeDimension.path.value
+      filters.set(cubeDimension.path.value, [])
+    }
   }
   for (const filter of view.filters) {
     if(filter.length) {

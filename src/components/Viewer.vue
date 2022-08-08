@@ -33,24 +33,30 @@
 </template>
 
 <script>
-/* eslint-disable */
-import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { Source } from 'rdf-cube-view-query'
-import LoadingIcon from './icons/LoadingIcon.vue'
-import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
+/* eslint-disable */
+import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import TabularView from './TabularView.vue'
 import { viewFromCube } from './common/viewUtils.js'
+import LoadingIcon from './icons/LoadingIcon.vue'
+import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
+import TabularView from './TabularView.vue'
 
-
-async function getView(source, entityType, {uri, data}){
+async function fetchView ({
+  entityType,
+  uri,
+  data,
+  source
+}) {
   if (entityType === 'cubes') {
     const cube = await source.cube(uri)
     return viewFromCube({ cube })
-  } else if(entityType === 'views') {
-    return await source.view(uri)
+  } else if (entityType === 'views') {
+    const view = await source.view(uri)
+    await view.fetchCubeShape()
+    return view
   } else {
     throw Error(`entityType ${entityType} not recognized`)
   }
@@ -89,7 +95,7 @@ export default defineComponent({
     } = toRefs(props)
 
     const item = shallowRef(Remote.loading())
-
+    const view = shallowRef(null)
     const fetchItem = async () => {
       if (typeof item.value?.data?.clear === 'function') {
         item.value.data.clear()
@@ -98,7 +104,12 @@ export default defineComponent({
       item.value = Remote.loading()
 
       try {
-        const itemData = await source.value.cube(uri.value)
+        view.value = await fetchView({
+          source: source.value,
+          entityType: entityType.value,
+          uri: uri.value
+        })
+        const itemData = view.value
 
         if (itemData) {
           item.value = Remote.loaded(itemData)
@@ -120,39 +131,44 @@ export default defineComponent({
     onMounted(fetchItem)
     watch(uri, fetchItem)
 
-    const cube = shallowRef(null)
-    const view = shallowRef(null)
-
-    const update = () => {
-      if (!item.value.data) return
-
-      if (view.value) {
-        view.value.clear()
-      }
-      view.value = viewFromCube({ cube: item.value.data })
-    }
-
-    watch([item], update)
+    // const view = shallowRef(null)
+    //
+    // const update = () => {
+    //   if (!item.value.data) return
+    //
+    //   if (view.value) {
+    //     view.value.clear()
+    //   }
+    //   view.value = viewFromCube({ cube: item.value.data })
+    // }
+    //
+    // watch([item], update)
 
     const isMetadataOpen = ref(false)
 
     return {
       item,
       isMetadataOpen,
-      cube,
-      view,
+      view
     }
   },
 
   computed: {
 
     title () {
-      const title = this.item.data.out(ns.schema.name, { language: this.language }).value
+
+      if (!this.item.data) {
+        return null
+      }
+      const title = this.item.data.ptr.out(ns.schema.name, { language: this.language }).value
       return title ?? null
     },
 
     description () {
-      const description = this.item.data.out(ns.schema.description, { language: this.language }).value
+      if (!this.item.data) {
+        return null
+      }
+      const description = this.item.data.ptr.out(ns.schema.description, { language: this.language }).value
       return description ?? null
     },
 

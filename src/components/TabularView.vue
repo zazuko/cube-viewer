@@ -78,7 +78,7 @@
     :quads="viewQuads"
     readOnly="false"
     has-toggle="true"
-    title="View"
+    title="Show view"
   />
 </template>
 
@@ -190,7 +190,7 @@ export default defineComponent({
         return queryQueue.add(async () => fetchDimensionLabels(dimension, currentView))
       }))
 
-      return dimensionsWithLabels.reduce(
+      return dimensionsWithLabels.filter(notNull=>notNull).reduce(
         (acc, [dimensionPath, dimensionLabels]) => ({
           ...acc,
           [dimensionPath.value]: dimensionLabels
@@ -202,7 +202,7 @@ export default defineComponent({
     onMounted(() => labels.value = fetchLabels(view.value))
     watch(view, () => labels.value = fetchLabels(view.value))
 
-    const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0])
+    const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
     const data = view.value.ptr.node(cubeTerm)
 
     return {
@@ -286,6 +286,7 @@ export default defineComponent({
 const fetchDimensionLabels = async (dimension, cubeSource) => {
 
   const cubeDimension = dimension.cubeDimensions[0]
+  if (!cubeDimension) return undefined
   const path = cubeDimension.path
 
   const dimensionLabels = rdf.clownface({ dataset: rdf.dataset() })
