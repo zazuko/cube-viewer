@@ -1,25 +1,27 @@
 <template>
-  <!-- h-1 is a hack to make the header cells layout work -->
-  <table class="h-1">
-    <thead>
-    <tr>
-      <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
-          class="border border-b-2 align-top text-left h-full">
-        <dimension-header
-          :dimension="dimension"
-          :language="language"
-          :labels="labels[dimension.path.value]"
-          :sort-dimension="sortDimension"
-          :sort-direction="sortDirection"
-          :filters="filters.get(dimension.path.value)"
-          @updateSort="updateSort"
-          @update:filters="updateDimensionFilters"
-        />
-      </th>
-    </tr>
-    <tr v-show="filtersSummary.length > 0">
-      <td :colspan="cubeDimensions.length" class="border px-2 py-2">
-        <div class="flex gap-2 justify-start">
+
+  <template v-if="cubeDimensions">
+    <!-- h-1 is a hack to make the header cells layout work -->
+    <table class="h-1">
+      <thead>
+      <tr>
+        <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
+            class="border border-b-2 align-top text-left h-full">
+          <dimension-header
+            :dimension="dimension"
+            :language="language"
+            :labels="labels[dimension.path.value]"
+            :sort-dimension="sortDimension"
+            :sort-direction="sortDirection"
+            :filters="filters.get(dimension.path.value)"
+            @updateSort="updateSort"
+            @update:filters="updateDimensionFilters"
+          />
+        </th>
+      </tr>
+      <tr v-show="filtersSummary.length > 0">
+        <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+          <div class="flex gap-2 justify-start">
                     <span v-for="(filter, index) in filtersSummary" :key="index"
                           class="tag bg-gray-100 rounded-md flex items-center gap-1">
                       <span>{{ filter.label }}</span>
@@ -27,64 +29,63 @@
                         <x-circle-icon class="w-5 h-5"/>
                       </button>
                     </span>
-        </div>
-      </td>
-    </tr>
-    </thead>
-    <tbody v-if="observations.isLoading">
-    <tr v-for="i in Array(pageSize)" :key="i">
-      <td :colspan="cubeDimensions.length" class="border px-2 py-2">
-        <loading-icon/>
-      </td>
-    </tr>
-    </tbody>
-    <tbody v-else-if="observations.error">
-    <tr>
-      <td :colspan="cubeDimensions.length" class="border px-2 py-1">
-        {{ observations.error }}
-      </td>
-    </tr>
-    </tbody>
-    <tbody v-else>
-    <tr v-for="(observation, index) in observations.data" :key="index">
-      <td
-        v-for="dimension in cubeDimensions"
-        :key="dimension.ptr.term.value"
-        class="border px-2 py-1 whitespace-nowrap"
-        :class="{
+          </div>
+        </td>
+      </tr>
+      </thead>
+      <tbody v-if="observations.isLoading">
+      <tr v-for="i in Array(pageSize)" :key="i">
+        <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+          <loading-icon/>
+        </td>
+      </tr>
+      </tbody>
+      <tbody v-else-if="observations.error">
+      <tr>
+        <td :colspan="cubeDimensions.length" class="border px-2 py-1">
+          {{ observations.error }}
+        </td>
+      </tr>
+      </tbody>
+      <tbody v-else>
+      <tr v-for="(observation, index) in observations.data" :key="index">
+        <td
+          v-for="dimension in cubeDimensions"
+          :key="dimension.ptr.term.value"
+          class="border px-2 py-1 whitespace-nowrap"
+          :class="{
                 'text-right tabular-nums': isNumericScale(dimension),
                 'bg-primary-50': isMeasureDimension(dimension),
               }"
-      >
-        <observation-value
-          :value="observation[dimension.path.value]"
-          :clownface="data"
-          :labels="labels[dimension.path.value]"
-          :language="language"
-        />
-      </td>
-    </tr>
-    </tbody>
-  </table>
+        >
+          <observation-value
+            :value="observation[dimension.path.value]"
+            :clownface="data"
+            :labels="labels[dimension.path.value]"
+            :language="language"
+          />
+        </td>
+      </tr>
+      </tbody>
+    </table>
 
-  <pagination-menu
-    v-model:page="page"
-    v-model:pageSize="pageSize"
-    :items-count="observationCount"
-  />
+    <pagination-menu
+      :page="page"
+      :pageSize="pageSize"
+      :items-count="observationCount"
+      @update:page="updatePage"
+      @update:pageSize="updatePageSize"
+    />
+
+  </template>
   <Editbox
     format="text/turtle"
-    ref="resultBoxRef"
     :quads="viewQuads"
-    readOnly="false"
-    has-toggle="true"
-    title="Show view"
-  />
+    isOpen="true"
+    title="Toggle debug"/>
 </template>
 
 <script>
-
-import Editbox from './rdf/Editbox.vue'
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import { LookupSource, View } from 'rdf-cube-view-query'
@@ -92,11 +93,14 @@ import rdf from 'rdf-ext'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
+import { getViewQuads } from './common/debug.js'
 import { projectionFromView, updateViewProjection } from './common/viewUtils.js'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
+/* eslint-disable */
+import Editbox from './rdf/Editbox.vue'
 
 export default defineComponent({
   name: 'TabularView',
@@ -106,7 +110,7 @@ export default defineComponent({
     ObservationValue,
     PaginationMenu,
     XCircleIcon,
-    Editbox,
+    Editbox
   },
   props: {
     view: {
@@ -121,88 +125,99 @@ export default defineComponent({
 
   setup (props) {
     const {
-      view,
+      view
     } = toRefs(props)
 
-    // Get all the controls from the view
-    const projection = projectionFromView(view.value)
-    const filters = ref(projection.filters)
-    const page = ref(projection.page)
-    const pageSize = ref(projection.pageSize)
-    const sortDimension = shallowRef(projection.sortDimension)
-    const sortDirection = shallowRef(projection.sortDirection)
+    const filters = ref()
+    const page = ref()
+    const pageSize = ref()
+    const sortDimension = shallowRef()
+    const sortDirection = shallowRef()
+
+    const cubeDimensions = ref()
+    const data = ref()
+
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())
     const queryQueue = queue(1)
-
     const cubeTerm = view.value.dimensions[0].cube
 
-    function getCurrentView () {
-      return updateViewProjection({
+    const updateObservations = async () => {
+      console.log('update observations')
+      const v = updateViewProjection({
         view: view.value,
         controls: {
           page: page.value,
           pageSize: pageSize.value,
           sortDimension: sortDimension.value,
           sortDirection: sortDirection.value,
-          filters: filters.value,
-        },
+          filters: filters.value
+        }
       })
+      viewQuads.value = getViewQuads(v, cubeTerm)
+      await fetchObservations(v)
     }
 
-    const currentView = ref(view.value)
-    const viewQuads = ref(viewToQuads(currentView.value, cubeTerm))
-
-    const updateObservations = async () => {
-      currentView.value = getCurrentView()
-      viewQuads.value = viewToQuads(currentView.value, cubeTerm)
-      await fetchObservations(currentView.value)
-    }
-    watch([page, pageSize, sortDimension, sortDirection, filters], updateObservations)
-
-    const fetchObservations = async (currentView) => {
+    const fetchObservations = async (view) => {
       observations.value = Remote.loading()
 
-      if (!currentView) return
+      if (!view) return
 
       await queryQueue.add(async () => {
-        observations.value = await Remote.fetch(currentView.observations.bind(currentView))
+        observations.value = await Remote.fetch(view.observations.bind(view))
       })
 
       await queryQueue.add(async () => {
-        observationCount.value = await Remote.fetch(currentView.observationCount.bind(currentView))
+        observationCount.value = await Remote.fetch(view.observationCount.bind(view))
       })
     }
-    onMounted(() => fetchObservations(view.value))
-    watch(view, () => fetchObservations(view.value))
 
     // Labels are stored as Record<dimensionURI, Clownface>
     const labels = ref({})
-    const fetchLabels = async (currentView) => {
-      if (!currentView || !currentView) return
+    const fetchLabels = async (view) => {
+      if (!view || !view) return
 
-      const dimensions = currentView.dimensions
+      const dimensions = view.dimensions
 
       const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
-        return queryQueue.add(async () => fetchDimensionLabels(dimension, currentView))
+        return queryQueue.add(async () => fetchDimensionLabels(dimension, view))
       }))
 
       return dimensionsWithLabels.filter(notNull => notNull).reduce(
         (acc, [dimensionPath, dimensionLabels]) => ({
           ...acc,
-          [dimensionPath.value]: dimensionLabels,
+          [dimensionPath.value]: dimensionLabels
         }),
         {}
       )
     }
 
-    // eslint-disable-next-line no-return-assign
-    onMounted(() => labels.value = fetchLabels(view.value))
-    // eslint-disable-next-line no-return-assign
-    watch(view, () => labels.value = fetchLabels(view.value))
+    const viewQuads = ref()
 
-    const cubeDimensions = view.value.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
-    const data = view.value.ptr.node(cubeTerm)
+    function updateView (view) {
+      // Get all the controls from the view
+      const projection = projectionFromView(view)
+      console.log('projection from view', projection)
+      filters.value = projection.filters
+      page.value = projection.page
+      pageSize.value = projection.pageSize
+      sortDimension.value = projection.sortDimension
+      sortDirection.value = projection.sortDirection
+
+      cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+      data.value = view.ptr.node(cubeTerm)
+
+      viewQuads.value = getViewQuads(view, cubeTerm)
+    }
+
+    function updateAll (view) {
+      updateView(view)
+      fetchObservations(view)
+      fetchLabels(view)
+    }
+
+    onMounted(() => updateAll(view.value))
+    watch(view, () => updateAll(view))
 
     return {
       page,
@@ -214,9 +229,9 @@ export default defineComponent({
       observationCount,
       labels,
       updateObservations,
-      viewQuads,
       cubeDimensions,
       data,
+      viewQuads
     }
   },
 
@@ -234,6 +249,7 @@ export default defineComponent({
           arg,
         }, index) => {
           const dimensionLabel = dimension.out(ns.schema.name, { language }).value
+          // const dimensionLabel = ptr.node(dimension).out(ns.schema.name, { language }).value
           const dimensionValueLabels = this.labels[dimension.path.value]
           const valueLabel = (
             dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
@@ -261,9 +277,20 @@ export default defineComponent({
       return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
     },
 
+    updatePage (page) {
+      this.page = page
+      this.updateObservations()
+    },
+
+    updatePageSize (pageSize) {
+      this.pageSize = pageSize
+      this.updateObservations()
+    },
+
     updateSort (dimension, direction) {
       this.sortDimension = dimension
       this.sortDirection = direction
+      this.updateObservations()
     },
 
     updateDimensionFilters (cubeDimension, filters) {
@@ -311,38 +338,5 @@ const fetchDimensionLabels = async (dimension, cubeSource) => {
   return [path, dimensionLabels]
 }
 
-function viewToQuads (view, cubeTerm) {
-  const { dataset } = getBoundedDescription({
-    term: view.term,
-    dataset: view.dataset,
-  })
-
-  // Add the cube constraints, which needed by the cube-viewer
-  for (const quad of view.dataset.match(cubeTerm, ns.cube.observationConstraint, null)) {
-    dataset.add(quad)
-  }
-  return [...dataset]
-}
-
-function getBoundedDescription ({
-  term,
-  dataset,
-}) {
-  const descriptionWithBlankNodes = rdf.traverser(({
-    dataset,
-    level,
-    quad,
-  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 5))
-  const result = rdf.dataset()
-  result.addAll(descriptionWithBlankNodes.match({
-    term,
-    dataset,
-  }))
-
-  return {
-    term,
-    dataset: result,
-  }
-}
 
 </script>

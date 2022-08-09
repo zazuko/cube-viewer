@@ -2,7 +2,9 @@
 /* eslint-disable */
 import '@rdfjs-elements/rdf-editor'
 
-import { defineProps, ref } from 'vue'
+import { defineProps, defineEmits, ref, onMounted } from 'vue'
+
+const emit = defineEmits(['updateView'])
 
 const props = defineProps({
   format: {
@@ -12,7 +14,7 @@ const props = defineProps({
   },
   quads: Array,
   title: String,
-  hasToggle: {
+  isOpen: {
     default: false
   }
 })
@@ -23,58 +25,52 @@ function onParsingFailed (e) {
   parseError.value = e?.detail?.error
 }
 
-const isOpen = ref(false)
+let isOpen = ref()
+
+const editor = ref()
+
+function onQuadsChanged({ detail }){
+  console.log('updating',detail.value.length,'quads')
+  parseError.value = ''
+  emit('updateView', detail.value)
+}
+
+onMounted(()=>{
+  isOpen.value = props.isOpen
+})
 
 </script>
 
 <template>
-  <div>
+  <div class="edit-box-container">
+    <h4 class="clickable" v-if="title" @click="isOpen=!isOpen">{{ title?title:'undefined' }}</h4>
+    <div v-if="parseError">
+      {{ parseError }}
+    </div>
 
-    <template v-if="hasToggle">
-      <h4 class="clickable" @click="isOpen=!isOpen">{{ title?title:'undefined' }}</h4>
-      <div v-if="parseError">
-        {{ parseError }}
-      </div>
-
-      <rdf-editor v-if="isOpen"
-                  :format="format"
-                  :quads="quads"
-                  auto-parse
-                  class="w-full h-full overflow-hidden"
-                  parseDelay="1000"
-                  @parsing-failed="onParsingFailed"
-      />
-    </template>
-    <template v-else>
-      <div class="rdfBox">
-        <h4>{{ title }}</h4>
-        <rdf-editor
-          :format="format"
-          :quads="quads"
-          prefixes="code"
-          auto-parse
-          class="w-full h-full overflow-hidden"
-          parseDelay="1000"
-          @parsing-failed="onParsingFailed"
-        />
-
-      </div>
-    </template>
+    <rdf-editor v-if="isOpen===true"
+                ref="editor"
+                :format="format"
+                :quads="quads"
+                auto-parse
+                parseDelay="1000"
+                @quads-changed="onQuadsChanged"
+                @parsing-failed="onParsingFailed"
+    />
 
   </div>
 </template>
-<style>
+<style scoped>
 
 .clickable {
   cursor: pointer;
+  align-self: center;
 }
 
-h4 {
-  color: gray;
-}
-
-.rdfBox {
-  border: lightgray solid;
-  border-radius: 5px;
+.edit-box-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 400px;
 }
 </style>

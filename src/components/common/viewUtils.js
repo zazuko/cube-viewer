@@ -1,57 +1,73 @@
+/* eslint-disable */
 
-import { Filter, View, CubeSource } from 'rdf-cube-view-query'
+import { CubeSource, Filter, View } from 'rdf-cube-view-query'
+import { ViewBuilder } from 'rdf-cube-view-query/lib/viewUtils.js'
 import * as ns from '../../namespace.js'
 
-const DEFAULT_CONTROLS = {
+const DEFAULT_PROJECTION = {
   page: 1,
   pageSize: 10,
   sortDimension: null,
   sortDirection: ns.view.Ascending,
-  filters: new Map(),
+  filters: new Map()
 }
 
-function getSorting (projection) {
-  const orderBy = projection.out(ns.view.orderBy)
-  if (orderBy.isList()) {
-    const criterion = [...orderBy.list()][0]
-    return {
-      sortDimension: criterion.out(ns.view.dimension).term,
-      sortDirection: criterion.out(ns.view.direction).term,
-    }
-  } else {
+function getSorting (view) {
+  const orderBy = view.orderBy()
+
+  if (!orderBy) {
     return {
       sortDimension: null,
       sortDirection: ns.view.Ascending,
     }
+  } else if (orderBy.length===1){
+    return {
+      sortDimension: orderBy[0].dimension,
+      sortDirection: orderBy[0].direction,
+    }
+  } else if (orderBy.length>1){
+    throw Error('Only one criterion supported')
   }
+
 }
 
 function projectionFromView (view) {
-  const projection = view.ptr.out(ns.view.projection)
-  const pageSize = projection.out(ns.view.limit).value ? parseInt(projection.out(ns.view.limit).value) : DEFAULT_CONTROLS.pageSize
-  const offset = projection.out(ns.view.offset).value
+
+  const offset = view.offset()??0
+  const pageSize = view.limit()??DEFAULT_PROJECTION.pageSize
   const page = Math.floor(offset / pageSize) + 1
   const {
     sortDimension,
     sortDirection,
-  } = getSorting(projection)
+  } = getSorting(view)
 
   // Get the filters in the form of records Path->Set:Filter
-  // @TODO use dimensions directly
+  // @TODO use View Dimensions directly instead of CubeDimensions
   const filters = new Map()
-  const pathsForDimension = {}
+  const viewDimensionCubePath = {}
+
   for (const dimension of view.dimensions) {
     const cubeDimension = dimension.cubeDimensions[0]
     if (cubeDimension) {
-      pathsForDimension[dimension.term.value] = cubeDimension.path.value
+      viewDimensionCubePath[dimension.term.value] = cubeDimension.path.value
       filters.set(cubeDimension.path.value, [])
+    } else {
+      console.log('No cube dimension for !',dimension.term)
     }
   }
+
   for (const filter of view.filters) {
-    if (filter.length) {
-      const path = pathsForDimension[filter[0].dimension.value]
-      filters.get(path).push(filter)
-    }
+
+
+      const path = viewDimensionCubePath[filter.dimension.value]
+      const viewDimension = view.dimensions.find(dimension=>dimension.term.equals(filter.dimension))
+
+    // This is the way the filter Vue component likes it.
+      filters.get(path).push({
+        dimension:viewDimension.cubeDimensions[0],
+        operation:filter.operation,
+        arg:filter.arg
+      })
   }
 
   return {
@@ -72,36 +88,26 @@ function updateViewProjection ({ view, controls }) {
     filters,
   } = controls
 
-  // A view always comes with a projection
-  const projection = view.ptr.out(ns.view.projection)
-
-  // Delete previous pagination
-  projection.deleteOut([ns.view.limit, ns.view.offset])
-
-  // Add new pagination
+  const limit = pageSize
   const offset = (page - 1) * pageSize
-  projection.addOut(ns.view.limit, pageSize)
-  projection.addOut(ns.view.offset, offset)
 
-  // Delete previous ordering
-  const orderByList = projection.out(ns.view.orderBy)
-  if (orderByList.isList()) {
-    for (const ordering of orderByList.list()) {
-      ordering.deleteOut([ns.view.dimension, ns.view.direction])
+  function getOrderBy(sortDimension,sortDirection){
+    if (!sortDimension) {
+      return null
     }
-    projection.deleteList(ns.view.orderBy)
-  }
-
-  // Add new ordering
-  if (sortDimension) {
     // Passing `path` because there's a bug in the library that doesn't
     // handle dimension comparison properly
     const orderDimension = view.dimension({ cubeDimension: sortDimension.path })
-    const order = projection.blankNode()
-      .addOut(ns.view.dimension, orderDimension.ptr)
-      .addOut(ns.view.direction, sortDirection)
-    projection.addList(ns.view.orderBy, order)
+
+    if (!orderDimension) {
+      throw Error('No dimension found for ',sortDimension.path)
+    }
+
+    return [{ dimension: orderDimension.ptr.term,  direction: sortDirection }]
   }
+  const orderBy = getOrderBy(sortDimension,sortDirection)
+
+  view.updateProjection({ offset, limit, orderBy: orderBy })
 
   // Delete old filters
   view.ptr.out(ns.view.filter).deleteOut()
@@ -126,11 +132,39 @@ function updateViewProjection ({ view, controls }) {
   return view
 }
 
-function viewFromCube ({ cube }, controls = DEFAULT_CONTROLS) {
+function viewFromCube ({ cube }, controls = DEFAULT_PROJECTION) {
   cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
-  updateViewProjection({ view, controls })
+  updateViewProjection({
+    view,
+    controls
+  })
   return view
 }
 
-export { viewFromCube, projectionFromView, updateViewProjection }
+async function viewFromDataset (dataset) {
+
+  const views = [...dataset.match(null, ns.rdf.type, ns.view.View)]
+  console.log(views.length)
+  if (!views.length){
+    return undefined
+  }
+  const {
+    view
+  } = ViewBuilder.fromDataset({
+    dataset,
+    term: views[0].subject
+  })
+  await view.fetchCubeShape()
+
+  return view
+}
+
+function applyDefaults ({ view }) {
+  // If there isn't a projection with a limit, add one with default values
+  return view
+}
+
+
+export { viewFromCube, projectionFromView, updateViewProjection, applyDefaults, viewFromDataset
+}
