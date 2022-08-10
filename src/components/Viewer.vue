@@ -21,7 +21,7 @@
           </button>
           <resource-details-dialog
             title="Metadata"
-            :resource="item.data.ptr"
+            :pointer="item.data.ptr"
             :is-open="isMetadataOpen"
             @close="isMetadataOpen = false"
           />

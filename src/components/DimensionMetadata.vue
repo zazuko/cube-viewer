@@ -5,7 +5,7 @@
     </button>
     <resource-details-dialog
       title="Dimension Metadata"
-      :resource="this.dimension.ptr"
+      :pointer="this.dimension.ptr"
       :is-open="isOpen"
       @close="isOpen = false"
     />
