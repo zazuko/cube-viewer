@@ -86,6 +86,7 @@
         <span class="text-gray-500 py-3">toggle debug</span>
       </button>
       <DebugBox
+        :key="debugCounter"
         v-if="debugOpen===true"
         :debugView="debugView"
         @updateView="updateView"
@@ -138,6 +139,7 @@ export default defineComponent({
 
     const debugOpen = ref(false)
     const debugView = ref()
+    const debugCounter = ref(1)
 
     const cubeTerm = view.value.dimensions[0].cube
     const cubePointer = ref()
@@ -166,6 +168,7 @@ export default defineComponent({
       })
 
       debugView.value = v
+      debugCounter.value = debugCounter.value+1
       await fetchObservations(v)
     }
 
@@ -215,6 +218,7 @@ export default defineComponent({
       sortDimension.value = projection.sortDimension
       sortDirection.value = projection.sortDirection
       cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+      debugCounter.value = debugCounter.value+1
       debugView.value = view
     }
 
@@ -240,6 +244,7 @@ export default defineComponent({
       cubeDimensions,
       cubePointer,
       debugView,
+      debugCounter,
       debugOpen
     }
   },
