@@ -14,11 +14,11 @@
     <table v-else>
       <tr v-for="([predicate, objects], index) in properties" :key="index" class="align-top">
         <td class="py-2 pr-4 font-semibold">
-          <term-display :term="predicate" :base="clownface.term.value" />
+          <term-display :term="predicate" :base="pointer.term.value" />
         </td>
         <td class="py-2 flex flex-col gap-1">
           <p v-for="(object, objectIndex) in objects" :key="objectIndex">
-            <observation-value :value="object" :clownface="clownface" />
+            <observation-value :value="object" :pointer="pointer" />
           </p>
         </td>
       </tr>
@@ -51,7 +51,7 @@ export default defineComponent({
       type: Term,
       required: true,
     },
-    clownface: {
+    pointer: {
       type: Object,
       required: true,
     },

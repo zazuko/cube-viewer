@@ -12,7 +12,7 @@
           </button>
         </dialog-title>
 
-        <resource-details :uri="uri" :clownface="clownface" />
+        <resource-details :uri="uri" :pointer="pointer" />
       </div>
     </div>
   </Dialog>
@@ -31,7 +31,7 @@ export default defineComponent({
   props: {
     isOpen: { type: Boolean, required: true },
     uri: { type: Term, required: true },
-    clownface: { type: Object, required: true },
+    pointer: { type: Object, required: true },
   },
   emits: ['close'],
 })

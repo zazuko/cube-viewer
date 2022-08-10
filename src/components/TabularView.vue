@@ -60,7 +60,7 @@
         >
           <observation-value
             :value="observation[dimension.path.value]"
-            :clownface="data"
+            :pointer="data"
             :labels="labels[dimension.path.value]"
             :language="language"
           />

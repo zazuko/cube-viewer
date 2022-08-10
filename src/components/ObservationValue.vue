@@ -1,13 +1,13 @@
 <template>
   <span v-if="!value">-</span>
-  <term-display v-else-if="value.termType === 'Literal'" :term="value" :base="clownface.term.value" />
+  <term-display v-else-if="value.termType === 'Literal'" :term="value" :base="pointer.term.value" />
   <div v-else class="flex-grow flex items-center justify-end">
     <button @click="showResourceExplorer = true" class="tag bg-gray-200 whitespace-nowrap">
-      <term-display :term="resourceLabel" :base="clownface.term.value" />
+      <term-display :term="resourceLabel" :base="pointer.term.value" />
     </button>
     <resource-explorer
       :uri="value"
-      :clownface="clownface"
+      :pointer="pointer"
       :is-open="showResourceExplorer"
       @close="showResourceExplorer = false"
     />
@@ -29,7 +29,7 @@ export default defineComponent({
       type: Term,
       required: true,
     },
-    clownface: {
+    pointer: {
       type: Object,
       required: true,
     },
@@ -57,7 +57,7 @@ export default defineComponent({
     resourceLabel () {
       return (
         this.labels?.node(this.value).out(ns.schema.name, { language: this.language }).term ||
-        this.clownface.node(this.value).out(ns.schema.name, { language: this.language }).term ||
+        this.pointer.node(this.value).out(ns.schema.name, { language: this.language }).term ||
         this.value
       )
     },
