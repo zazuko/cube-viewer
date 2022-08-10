@@ -1,91 +1,101 @@
 <template>
 
-  <template v-if="cubeDimensions">
-    <!-- h-1 is a hack to make the header cells layout work -->
-    <table class="h-1">
-      <thead>
-      <tr>
-        <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
-            class="border border-b-2 align-top text-left h-full">
-          <dimension-header
-            :dimension="dimension"
-            :language="language"
-            :labels="labels[dimension.path.value]"
-            :sort-dimension="sortDimension"
-            :sort-direction="sortDirection"
-            :filters="filters.get(dimension.path.value)"
-            @updateSort="updateSort"
-            @update:filters="updateDimensionFilters"
-          />
-        </th>
-      </tr>
-      <tr v-show="filtersSummary.length > 0">
-        <td :colspan="cubeDimensions.length" class="border px-2 py-2">
-          <div class="flex gap-2 justify-start">
-                    <span v-for="(filter, index) in filtersSummary" :key="index"
-                          class="tag bg-gray-100 rounded-md flex items-center gap-1">
-                      <span>{{ filter.label }}</span>
-                      <button title="Remove filter" @click="removeFilter(filter)" class="button-text">
-                        <x-circle-icon class="w-5 h-5"/>
-                      </button>
-                    </span>
-          </div>
-        </td>
-      </tr>
-      </thead>
-      <tbody v-if="observations.isLoading">
-      <tr v-for="i in Array(pageSize)" :key="i">
-        <td :colspan="cubeDimensions.length" class="border px-2 py-2">
-          <loading-icon/>
-        </td>
-      </tr>
-      </tbody>
-      <tbody v-else-if="observations.error">
-      <tr>
-        <td :colspan="cubeDimensions.length" class="border px-2 py-1">
-          {{ observations.error }}
-        </td>
-      </tr>
-      </tbody>
-      <tbody v-else>
-      <tr v-for="(observation, index) in observations.data" :key="index">
-        <td
-          v-for="dimension in cubeDimensions"
-          :key="dimension.ptr.term.value"
-          class="border px-2 py-1 whitespace-nowrap"
-          :class="{
+  <div>
+    <template v-if="cubeDimensions">
+      <!-- h-1 is a hack to make the header cells layout work -->
+      <table class="h-1">
+        <thead>
+        <tr>
+          <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
+              class="border border-b-2 align-top text-left h-full">
+            <dimension-header
+              :dimension="dimension"
+              :language="language"
+              :labels="labels[dimension.path.value]"
+              :sort-dimension="sortDimension"
+              :sort-direction="sortDirection"
+              :filters="filters.get(dimension.path.value)"
+              @updateSort="updateSort"
+              @update:filters="updateDimensionFilters"
+            />
+          </th>
+        </tr>
+        <tr v-show="filtersSummary.length > 0">
+          <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+            <div class="flex gap-2 justify-start">
+              <span v-for="(filter, index) in filtersSummary" :key="index"
+                    class="tag bg-gray-100 rounded-md flex items-center gap-1">
+                <span>{{ filter.label }}</span>
+                <button title="Remove filter" @click="removeFilter(filter)" class="button-text">
+                  <x-circle-icon class="w-5 h-5"/>
+                </button>
+              </span>
+            </div>
+          </td>
+        </tr>
+        </thead>
+        <tbody v-if="observations.isLoading">
+        <tr v-for="i in Array(pageSize)" :key="i">
+          <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+            <loading-icon/>
+          </td>
+        </tr>
+        </tbody>
+        <tbody v-else-if="observations.error">
+        <tr>
+          <td :colspan="cubeDimensions.length" class="border px-2 py-1">
+            {{ observations.error }}
+          </td>
+        </tr>
+        </tbody>
+        <tbody v-else>
+        <tr v-for="(observation, index) in observations.data" :key="index">
+          <td
+            v-for="dimension in cubeDimensions"
+            :key="dimension.ptr.term.value"
+            class="border px-2 py-1 whitespace-nowrap"
+            :class="{
                 'text-right tabular-nums': isNumericScale(dimension),
                 'bg-primary-50': isMeasureDimension(dimension),
               }"
-        >
-          <observation-value
-            :value="observation[dimension.path.value]"
-            :pointer="data"
-            :labels="labels[dimension.path.value]"
-            :language="language"
-          />
-        </td>
-      </tr>
-      </tbody>
-    </table>
+          >
+            <observation-value
+              :value="observation[dimension.path.value]"
+              :pointer="cubePointer"
+              :labels="labels[dimension.path.value]"
+              :language="language"
+            />
+          </td>
+        </tr>
+        </tbody>
+      </table>
 
-    <pagination-menu
-      :page="page"
-      :pageSize="pageSize"
-      :items-count="observationCount"
-      @update:page="updatePage"
-      @update:pageSize="updatePageSize"
-    />
+      <pagination-menu
+        :page="page"
+        :pageSize="pageSize"
+        :items-count="observationCount"
+        @update:page="updatePage"
+        @update:pageSize="updatePageSize"
+      />
 
-  </template>
-  <Editbox
-    format="text/turtle"
-    :quads="viewQuads"
-    isOpen="true"
-    title="Toggle debug"/>
+    </template>
+
+    <div>
+      <button class="flex items-start text-left leading-tight"
+              @click="debugOpen=!debugOpen">
+        <span class="text-gray-500 py-3">toggle debug</span>
+      </button>
+      <DebugBox
+        v-if="debugOpen===true"
+        :debugView="debugView"
+        @updateView="updateView"
+      />
+    </div>
+  </div>
 </template>
 
 <script>
+/* eslint-disable */
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import { LookupSource, View } from 'rdf-cube-view-query'
@@ -93,14 +103,12 @@ import rdf from 'rdf-ext'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { getViewQuads } from './common/debug.js'
 import { projectionFromView, updateViewProjection } from './common/viewUtils.js'
+import DebugBox from './debug/DebugBox.vue'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
-/* eslint-disable */
-import Editbox from './rdf/Editbox.vue'
 
 export default defineComponent({
   name: 'TabularView',
@@ -110,7 +118,7 @@ export default defineComponent({
     ObservationValue,
     PaginationMenu,
     XCircleIcon,
-    Editbox
+    DebugBox,
   },
   props: {
     view: {
@@ -128,20 +136,22 @@ export default defineComponent({
       view
     } = toRefs(props)
 
+    const debugOpen = ref(false)
+    const debugView = ref()
+
+    const cubeTerm = view.value.dimensions[0].cube
+    const cubePointer = ref()
+    cubePointer.value = view.value.ptr.node(cubeTerm)
+
     const filters = ref()
     const page = ref()
     const pageSize = ref()
     const sortDimension = shallowRef()
     const sortDirection = shallowRef()
-
     const cubeDimensions = ref()
-    const data = ref()
-
-    const observations = ref(Remote.loading())
-    const observationCount = ref(Remote.loading())
     const queryQueue = queue(1)
-    const cubeTerm = view.value.dimensions[0].cube
 
+    // Used when controls change
     const updateObservations = async () => {
       console.log('update observations')
       const v = updateViewProjection({
@@ -154,10 +164,13 @@ export default defineComponent({
           filters: filters.value
         }
       })
-      viewQuads.value = getViewQuads(v, cubeTerm)
+
+      debugView.value = v
       await fetchObservations(v)
     }
 
+    const observations = ref(Remote.loading())
+    const observationCount = ref(Remote.loading())
     const fetchObservations = async (view) => {
       observations.value = Remote.loading()
 
@@ -192,9 +205,7 @@ export default defineComponent({
       )
     }
 
-    const viewQuads = ref()
-
-    function updateView (view) {
+    function loadViewDefinition (view) {
       // Get all the controls from the view
       const projection = projectionFromView(view)
       console.log('projection from view', projection)
@@ -203,21 +214,18 @@ export default defineComponent({
       pageSize.value = projection.pageSize
       sortDimension.value = projection.sortDimension
       sortDirection.value = projection.sortDirection
-
       cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
-      data.value = view.ptr.node(cubeTerm)
-
-      viewQuads.value = getViewQuads(view, cubeTerm)
+      debugView.value = view
     }
 
-    function updateAll (view) {
-      updateView(view)
+    function updateView (view) {
+      loadViewDefinition(view)
       fetchObservations(view)
       fetchLabels(view)
     }
 
-    onMounted(() => updateAll(view.value))
-    watch(view, () => updateAll(view))
+    onMounted(() => updateView(view.value))
+    watch(view, () => updateView(view))
 
     return {
       page,
@@ -230,8 +238,9 @@ export default defineComponent({
       labels,
       updateObservations,
       cubeDimensions,
-      data,
-      viewQuads
+      cubePointer,
+      debugView,
+      debugOpen
     }
   },
 
@@ -268,6 +277,10 @@ export default defineComponent({
   },
 
   methods: {
+    updateView (arg) {
+      this.$emit('updateView', arg)
+    },
+
     isNumericScale (dimension) {
       const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
       return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
@@ -306,6 +319,7 @@ export default defineComponent({
       this.updateObservations()
     },
   },
+
 })
 
 const fetchDimensionLabels = async (dimension, cubeSource) => {

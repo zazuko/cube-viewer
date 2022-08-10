@@ -57,8 +57,6 @@ function projectionFromView (view) {
   }
 
   for (const filter of view.filters) {
-
-
       const path = viewDimensionCubePath[filter.dimension.value]
       const viewDimension = view.dimensions.find(dimension=>dimension.term.equals(filter.dimension))
 
@@ -142,7 +140,7 @@ function viewFromCube ({ cube }, controls = DEFAULT_PROJECTION) {
   return view
 }
 
-async function viewFromDataset (dataset) {
+async function viewFromDataset ({ dataset }) {
 
   const views = [...dataset.match(null, ns.rdf.type, ns.view.View)]
   console.log(views.length)
@@ -152,8 +150,9 @@ async function viewFromDataset (dataset) {
   const {
     view
   } = ViewBuilder.fromDataset({
+    term: views[0].subject,
     dataset,
-    term: views[0].subject
+
   })
   await view.fetchCubeShape()
 

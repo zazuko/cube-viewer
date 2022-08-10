@@ -13,10 +13,6 @@ const props = defineProps({
     type: String
   },
   quads: Array,
-  title: String,
-  isOpen: {
-    default: false
-  }
 })
 
 const parseError = ref()
@@ -24,8 +20,6 @@ const parseError = ref()
 function onParsingFailed (e) {
   parseError.value = e?.detail?.error
 }
-
-let isOpen = ref()
 
 const editor = ref()
 
@@ -35,21 +29,17 @@ function onQuadsChanged({ detail }){
   emit('updateView', detail.value)
 }
 
-onMounted(()=>{
-  isOpen.value = props.isOpen
-})
-
 </script>
 
 <template>
+
   <div class="edit-box-container">
-    <h4 class="clickable" v-if="title" @click="isOpen=!isOpen">{{ title?title:'undefined' }}</h4>
+
     <div v-if="parseError">
       {{ parseError }}
     </div>
 
-    <rdf-editor v-if="isOpen===true"
-                ref="editor"
+    <rdf-editor ref="editor"
                 :format="format"
                 :quads="quads"
                 auto-parse
@@ -59,18 +49,14 @@ onMounted(()=>{
     />
 
   </div>
+
 </template>
 <style scoped>
 
-.clickable {
-  cursor: pointer;
-  align-self: center;
-}
-
 .edit-box-container {
   display: flex;
+  gap: 10px;
   flex-direction: column;
-  width: 100%;
   min-width: 400px;
 }
 </style>

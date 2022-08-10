@@ -1,8 +1,8 @@
 import rdf from 'rdf-ext'
 import * as ns from '../../namespace.js'
 
-function getViewQuads (view, cubeTerm) {
-  const { dataset } = getBoundedDescription({
+function getBoundedViewPointer (view, cubeTerm) {
+  const { term, dataset } = getBoundedDescription({
     term: view.term,
     dataset: view.dataset,
   })
@@ -11,7 +11,8 @@ function getViewQuads (view, cubeTerm) {
   for (const quad of view.dataset.match(cubeTerm, ns.cube.observationConstraint, null)) {
     dataset.add(quad)
   }
-  return [...dataset]
+
+  return rdf.clownface({ term, dataset })
 }
 
 function getBoundedDescription ({
@@ -34,4 +35,4 @@ function getBoundedDescription ({
     dataset: result,
   }
 }
-export { getViewQuads }
+export { getBoundedViewPointer }

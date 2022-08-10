@@ -28,69 +28,24 @@
         </div>
       </header>
       <tabular-view
+        @updateView="updateView"
         :key="count"
         v-if="view"
         :view="view"
         :language="language"/>
 
-      <div class="import">
-
-        <div class="edit-box">
-          <Editbox
-            title="Import"
-            format="text/turtle"
-            @updateView="updateQuads"
-          />
-        </div>
-        <div class="edit-box-button">
-          <button
-            @click="loadView"
-            class=" bg-transparent hover:bg-gray-500 text-gray-700 font-semibold hover:text-white py-2 px-4 border border-gray-500 hover:border-transparent rounded">
-            Import {{ quads.length }} Quads
-          </button>
-        </div>
-
-      </div>
-
     </div>
   </div>
 </template>
-
-<style scoped>
-
-.import {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-}
-
-.edit-box {
-  max-width: 70%;
-  border: darkgray solid 1px;
-}
-
-.edit-box-button {
-  align-self: flex-start;
-}
-
-.clickable {
-  cursor: pointer;
-}
-
-</style>
-
 <script>
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { Source } from 'rdf-cube-view-query'
-import rdf from 'rdf-ext'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { applyDefaults, viewFromCube, viewFromDataset } from './common/viewUtils.js'
+import { applyDefaults, viewFromCube } from './common/viewUtils.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
 /* eslint-disable */
-import Editbox from './rdf/Editbox.vue'
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import TabularView from './TabularView.vue'
 
@@ -102,7 +57,7 @@ async function fetchView ({
 }) {
   if (entityType === 'cubes') {
     const cube = await source.cube(uri)
-    return viewFromCube({ cube })
+    return applyDefaults({ view: viewFromCube({ cube }) })
   } else if (entityType === 'views') {
     const view = await source.view(uri)
     await view.fetchCubeShape()
@@ -120,7 +75,6 @@ export default defineComponent({
     LoadingIcon,
     ResourceDetailsDialog,
     TabularView,
-    Editbox
   },
   props: {
     source: {
@@ -146,7 +100,7 @@ export default defineComponent({
       entityType,
     } = toRefs(props)
 
-    const count = ref(1)
+    const refreshHack = ref(1)
     const item = shallowRef(Remote.loading())
     const view = shallowRef(null)
     const fetchItem = async () => {
@@ -186,27 +140,18 @@ export default defineComponent({
 
     const isMetadataOpen = ref(false)
 
-    const quads = ref([])
-
-    async function updateQuads (contents) {
-      quads.value = contents
-    }
-
-    async function loadView () {
-      const dataset = rdf.dataset()
-      dataset.addAll(quads.value)
-      view.value = await viewFromDataset(dataset)
-      count.value = count.value + 1
+    function updateView ({ view }) {
+      console.log('updated from children', view)
+      view.value = view
+      refreshHack.value = refreshHack.value + 1
     }
 
     return {
       item,
       isMetadataOpen,
       view,
-      updateQuads,
-      count,
-      quads,
-      loadView
+      count: refreshHack,
+      updateView
     }
   },
 
