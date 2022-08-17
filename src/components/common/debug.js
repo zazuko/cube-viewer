@@ -1,17 +1,10 @@
 import rdf from 'rdf-ext'
-import * as ns from '../../namespace.js'
 
-function getBoundedViewPointer (view, cubeTerm) {
+function getBoundedViewPointer (view) {
   const { term, dataset } = getBoundedDescription({
     term: view.term,
     dataset: view.dataset,
   })
-
-  // Add the cube constraints, which needed by the cube-viewer
-  for (const quad of view.dataset.match(cubeTerm, ns.cube.observationConstraint, null)) {
-    dataset.add(quad)
-  }
-
   return rdf.clownface({ term, dataset })
 }
 

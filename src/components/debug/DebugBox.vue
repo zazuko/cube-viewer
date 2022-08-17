@@ -4,17 +4,21 @@ import '@rdfjs-elements/rdf-editor'
 import rdf from 'rdf-ext'
 
 import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
+import { View } from 'rdf-cube-view-query'
+
 import { getBoundedViewPointer } from '../common/debug.js'
-import { viewFromDataset } from '../common/viewUtils.js'
 import Editbox from './Editbox.vue'
 
-const emit = defineEmits(['updateView'])
+const emit = defineEmits(['updateDataset'])
 
 const props = defineProps({
-  debugView: Object,
   initialState: {
     default: 1,
     type: Number
+  },
+  debugView: {
+    type: View,
+    required: true
   }
 })
 
@@ -32,19 +36,12 @@ async function updateEditBoxQuads (contents) {
 async function loadViewFromData () {
   const dataset = rdf.dataset()
   dataset.addAll(editBoxQuads.value)
-  const view = await viewFromDataset({
-    dataset
-  })
-  emit('updateView', { view: view })
+  emit('updateDataset', { dataset })
 }
 
 async function roundTrip () {
-  const cubeTerm = props.debugView.dimensions[0].cube
-  const viewPointer = getBoundedViewPointer(props.debugView, cubeTerm)
-  const view = await viewFromDataset({
-    dataset:viewPointer.dataset
-  })
-  emit('updateView', { view: view })
+  const dataset = getBoundedViewPointer(props.debugView).dataset
+  emit('updateDataset', { dataset })
 }
 
 const state = ref()
@@ -53,14 +50,32 @@ onMounted(() => {
   state.value = props.initialState
 })
 
-
 const viewBoxQuads = computed(() => {
-  const cubeTerm = props.debugView.dimensions[0].cube
-  return  [...getBoundedViewPointer(props.debugView, cubeTerm).dataset]
+  return [...getBoundedViewPointer(props.debugView).dataset]
 })
 
 const allQuads = computed(() => {
   return [...props.debugView.ptr.dataset]
+})
+
+const viewInfo = computed(() => {
+
+  const result = []
+  for (const dimension of props.debugView.dimensions) {
+    result.push({
+      viewDimensionTerm: dimension.ptr.term.value,
+      cubeDimensionsTerms:dimension.cubeDimensions.map(x => x.path.value),
+      cubesTerms:dimension.cubes.map(x => x.value)
+    })
+  }
+
+  return result
+})
+
+const sources = computed(() => {
+  return {
+    endpoints:props.debugView.sources().map(x => x.endpoint),
+  }
 })
 
 
@@ -92,7 +107,7 @@ const allQuads = computed(() => {
         :class=" state===OTHERS?'menu-item-selected':'menu-item'"
         @click="state=OTHERS"
       >
-        Others
+        Info
       </button>
     </div>
     <div class="main">
@@ -102,7 +117,7 @@ const allQuads = computed(() => {
           v-if="state===CURRENT_VIEW"
         >
           <div class="gloss">
-            All the quads of the view
+            {{ viewBoxQuads.length }} quads for this view
           </div>
         </template>
 
@@ -125,13 +140,37 @@ const allQuads = computed(() => {
           v-if="state===ALL"
         >
           <div class="gloss">
-            All the quads in memory
+            {{ allQuads.length }} quads in memory
           </div>
         </template>
 
         <template
           v-if="state===OTHERS"
         >
+
+          <div class="gloss">
+            Current view
+          </div>
+          <div>
+            <table>
+              <tr>
+                <th>View dimension</th>
+                <th>Cube dimensions</th>
+                <th>Cubes</th>
+              </tr>
+              <tr v-for="{viewDimensionTerm,cubeDimensionsTerms,cubesTerms} of viewInfo">
+                <td>{{ viewDimensionTerm }}</td>
+                <td>{{ cubeDimensionsTerms }}</td>
+                <td>{{ cubesTerms }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="gloss">
+            Sources
+          </div>
+          <div>
+            {{sources}}
+          </div>
           <div class="gloss"
                v-if="!editBoxQuads.length">
             Export and import the current view
@@ -202,13 +241,16 @@ const allQuads = computed(() => {
 .controls {
   margin-top: 10px;
   flex: 1;
+  gap: 10px;
   margin-left: 20px;
   margin-bottom: 10px;
 }
 
 .gloss {
-  height: 50px;
-  align-self: center;
+  /*align-self: center;*/
+
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .content {

@@ -140,27 +140,36 @@ function viewFromCube ({ cube }, controls = DEFAULT_PROJECTION) {
   return view
 }
 
-async function viewFromDataset ({ dataset }) {
-
+async function viewFromDataset ({
+  dataset,
+  fallbackSource
+}) {
   const views = [...dataset.match(null, ns.rdf.type, ns.view.View)]
-  console.log(views.length)
-  if (!views.length){
+  if (views.length < 1) {
     return undefined
   }
   const {
     view
   } = ViewBuilder.fromDataset({
     term: views[0].subject,
-    dataset,
-
+    dataset
   })
-  await view.fetchCubeShape()
-
+  if (view.sources().length < 1) {
+    view.source = fallbackSource
+  }
+  await view.fetchCubesShapes()
+  console.log('Loaded from dataset', view.term)
+  console.log('view.dimensions', view.dimensions)
   return view
 }
 
 function applyDefaults ({ view }) {
   // If there isn't a projection with a limit, add one with default values
+
+  const offset = view.offset() ?? 0
+  const pageSize = view.limit() ?? DEFAULT_PROJECTION.pageSize
+  view.offset(offset)
+  view.limit(pageSize)
   return view
 }
 

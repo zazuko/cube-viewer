@@ -8,11 +8,11 @@
     </SelectBox>
     <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
       <template v-slot:button="{ selected }">
-        <term-display v-if="selected" :term="resourceLabel(selected)" :base="dimension.cube?.value" />
+        <term-display v-if="selected" :term="resourceLabel(selected)" :base="dimension.cubes[0]?.value" />
         <span v-else class="text-gray-500">Value</span>
       </template>
       <template v-slot:option="{ option }">
-        <term-display :term="resourceLabel(option)" :base="dimension.cube?.value" />
+        <term-display :term="resourceLabel(option)" :base="dimension.cubes[0]?.value" />
       </template>
     </SelectBox>
     <div v-else>

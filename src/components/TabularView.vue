@@ -89,7 +89,7 @@
         :key="debugCounter"
         v-if="debugOpen===true"
         :debugView="debugView"
-        @updateView="updateView"
+        @updateDataset="updateDataset"
       />
     </div>
   </div>
@@ -141,7 +141,7 @@ export default defineComponent({
     const debugView = ref()
     const debugCounter = ref(1)
 
-    const cubeTerm = view.value.dimensions[0].cube
+    const cubeTerm = view.value.dimensions[0].cubes[0]
     const cubePointer = ref()
     cubePointer.value = view.value.ptr.node(cubeTerm)
 
@@ -254,7 +254,7 @@ export default defineComponent({
     filtersSummary () {
       const language = this.language
       const ptr = this.view.ptr
-      const cube = this.view.dimensions[0].cube
+      const cube = this.view.cubes()[0]
 
       return [...this.filters.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
         dimensionFilters.map(({
@@ -282,6 +282,11 @@ export default defineComponent({
   },
 
   methods: {
+
+    updateDataset (arg) {
+      this.$emit('updateDataset', arg)
+    },
+
     updateView (arg) {
       this.$emit('updateView', arg)
     },

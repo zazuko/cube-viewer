@@ -29,23 +29,27 @@
       </header>
       <tabular-view
         @updateView="updateView"
+        @updateDataset="updateDataset"
         :key="count"
         v-if="view"
         :view="view"
         :language="language"/>
-
+      <div v-if="importError && !view" class="text-red-500">
+        {{ importError }}
+      </div>
     </div>
   </div>
 </template>
 <script>
+/* eslint-disable */
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { Source } from 'rdf-cube-view-query'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { applyDefaults, viewFromCube } from './common/viewUtils.js'
+import { applyDefaults, viewFromCube, viewFromDataset } from './common/viewUtils.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
-/* eslint-disable */
+
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import TabularView from './TabularView.vue'
 
@@ -60,7 +64,7 @@ async function fetchView ({
     return applyDefaults({ view: viewFromCube({ cube }) })
   } else if (entityType === 'views') {
     const view = await source.view(uri)
-    await view.fetchCubeShape()
+    await view.fetchCubesShapes()
     return applyDefaults({ view })
   } else {
     throw Error(`entityType ${entityType} not recognized`)
@@ -100,6 +104,7 @@ export default defineComponent({
       entityType,
     } = toRefs(props)
 
+    const importError = ref()
     const refreshHack = ref(1)
     const item = shallowRef(Remote.loading())
     const view = shallowRef(null)
@@ -116,6 +121,7 @@ export default defineComponent({
           entityType: entityType.value,
           uri: uri.value,
         })
+        importError.value = null
         const itemData = view.value
 
         if (itemData) {
@@ -141,8 +147,24 @@ export default defineComponent({
     const isMetadataOpen = ref(false)
 
     function updateView ({ view }) {
-      console.log('updated from children', view)
+      console.log('view updated from children', view)
       view.value = view
+      refreshHack.value = refreshHack.value + 1
+    }
+
+    async function updateDataset ({ dataset }) {
+      console.log('quads updated from children', dataset)
+      try {
+        const view = await viewFromDataset({
+          dataset,
+          fallbackSource: source.value
+        })
+        view.value = applyDefaults(view)
+        importError.value = null
+      } catch (error){
+        importError.value = error
+      }
+
       refreshHack.value = refreshHack.value + 1
     }
 
@@ -151,7 +173,10 @@ export default defineComponent({
       isMetadataOpen,
       view,
       count: refreshHack,
-      updateView
+      updateView,
+      updateDataset,
+      source,
+      importError
     }
   },
 

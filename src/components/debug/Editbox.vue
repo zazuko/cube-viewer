@@ -24,7 +24,7 @@ function onParsingFailed (e) {
 const editor = ref()
 
 function onQuadsChanged({ detail }){
-  console.log('updating',detail.value.length,'quads')
+  console.log('parsed',detail.value.length,'quads')
   parseError.value = ''
   emit('updateView', detail.value)
 }
