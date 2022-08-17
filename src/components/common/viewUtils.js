@@ -52,19 +52,19 @@ function projectionFromView (view) {
       viewDimensionCubePath[dimension.term.value] = cubeDimension.path.value
       filters.set(cubeDimension.path.value, [])
     } else {
-      console.log('No cube dimension for !',dimension.term)
+      console.log('No cube dimension for !', dimension.term)
     }
   }
-
+  
   for (const filter of view.filters) {
-      const path = viewDimensionCubePath[filter.dimension.value]
-      const viewDimension = view.dimensions.find(dimension=>dimension.term.equals(filter.dimension))
+    const path = viewDimensionCubePath[filter.dimension.value]
+    const viewDimension = view.dimensions.find(dimension => dimension.term.equals(filter.dimension))
 
     // This is the way the filter Vue component likes it.
-      filters.get(path).push({
-        dimension:viewDimension.cubeDimensions[0],
-        operation:filter.operation,
-        arg:filter.arg
+    filters.get(path).push({
+      dimension: viewDimension.cubeDimensions[0],
+      operation: filter.operation,
+      arg: filter.arg
       })
   }
 
@@ -107,26 +107,33 @@ function updateViewProjection ({ view, controls }) {
 
   view.updateProjection({ offset, limit, orderBy: orderBy })
 
-  // Delete old filters
-  view.ptr.out(ns.view.filter).deleteOut()
-  view.ptr.deleteOut(ns.view.filter)
-
   // Add new view filters
   const viewFilters = [...filters.entries()].map(([dimensionPath, dimensionFilters]) => dimensionFilters.map(({
     operation,
-    arg,
+    arg
   }) => {
     const viewDimension = view.dimension({ cubeDimension: dimensionPath })
     return new Filter({
       dimension: viewDimension,
       operation: operation.term,
-      arg,
+      arg
     })
   }))
 
-  for (const filter of viewFilters) {
-    view.addFilter(filter)
+  console.log('viewFilters', viewFilters)
+
+  // Delete old filters
+  view.ptr.out(ns.view.filter).deleteOut()
+  view.ptr.deleteOut(ns.view.filter)
+
+  if (viewFilters.length > 0) {
+    for (const dimensionFilters of viewFilters) {
+      for (const filter of dimensionFilters){
+        view.addFilter(filter)
+      }
+    }
   }
+
   return view
 }
 

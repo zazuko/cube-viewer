@@ -24,6 +24,7 @@
             :filters="filters"
             :labels="labels"
             :language="language"
+            :base="base"
             @update:filters="$emit('update:filters', dimension, $event)"
           />
         </popover-panel>
@@ -75,6 +76,10 @@ export default defineComponent({
   props: {
     dimension: {
       type: CubeDimension,
+      required: true,
+    },
+    base: {
+      type: String,
       required: true,
     },
     language: {

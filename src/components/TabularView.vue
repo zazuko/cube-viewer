@@ -9,6 +9,7 @@
           <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
               class="border border-b-2 align-top text-left h-full">
             <dimension-header
+              :base="cubePointer.term.value"
               :dimension="dimension"
               :language="language"
               :labels="labels[dimension.path.value]"

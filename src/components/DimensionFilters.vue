@@ -7,6 +7,7 @@
         :dimension="dimension"
         :language="language"
         :labels="labels"
+        :base="base"
         v-model:filter="filter.value"
       />
       <button type="button" @click="addFilter" class="button-text justify-end">
@@ -32,6 +33,10 @@ export default defineComponent({
   props: {
     dimension: {
       type: CubeDimension,
+      required: true,
+    },
+    base: {
+      type: String,
       required: true,
     },
     filters: {
