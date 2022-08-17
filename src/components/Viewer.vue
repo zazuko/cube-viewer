@@ -47,7 +47,7 @@ import { Source } from 'rdf-cube-view-query'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { applyDefaults, viewFromCube, viewFromDataset } from './common/viewUtils.js'
+import { applyDefaults, viewFromCube, viewFromDataset } from './common/viewLoaders.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
 
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'

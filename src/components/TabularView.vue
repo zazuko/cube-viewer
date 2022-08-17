@@ -89,7 +89,7 @@
       <DebugBox
         :key="debugCounter"
         v-if="debugOpen===true"
-        :debugView="debugView"
+        :debugView="currentView"
         @updateDataset="updateDataset"
       />
     </div>
@@ -105,7 +105,9 @@ import rdf from 'rdf-ext'
 import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import { projectionFromView, updateViewProjection } from './common/viewUtils.js'
+import { getBoundedViewPointer } from './common/debug.js'
+import { filtersFromView, filtersToView } from './common/filters.js'
+import { projectionFromView, updateViewProjection } from './common/projection.js'
 import DebugBox from './debug/DebugBox.vue'
 import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
@@ -138,8 +140,8 @@ export default defineComponent({
       view
     } = toRefs(props)
 
+    const currentView = ref()
     const debugOpen = ref(false)
-    const debugView = ref()
     const debugCounter = ref(1)
 
     const cubeTerm = view.value.dimensions[0].cubes[0]
@@ -156,10 +158,9 @@ export default defineComponent({
 
     // Used when controls change
     const updateObservations = async () => {
-      console.log('update observations')
-      const v = updateViewProjection({
-        view: view.value,
-        controls: {
+      let v = updateViewProjection({
+        view: currentView.value,
+        projection: {
           page: page.value,
           pageSize: pageSize.value,
           sortDimension: sortDimension.value,
@@ -167,23 +168,29 @@ export default defineComponent({
           filters: filters.value
         }
       })
-
-      debugView.value = v
-      debugCounter.value = debugCounter.value+1
+      v = filtersToView({
+        view: v,
+        filters: filters.value
+      })
       await fetchObservations(v)
+      currentView.value = v
+      debugCounter.value = debugCounter.value + 1
     }
 
     const observations = ref(Remote.loading())
     const observationCount = ref(Remote.loading())
     const fetchObservations = async (view) => {
       observations.value = Remote.loading()
-
       if (!view) return
-
       await queryQueue.add(async () => {
-        observations.value = await Remote.fetch(view.observations.bind(view))
+        try {
+          observations.value = await Remote.fetch(view.observations.bind(view))
+        } catch (error){
+          console.log(error)
+          console.log('view that produced the error')
+          console.log(getBoundedViewPointer(view).dataset.toString())
+        }
       })
-
       await queryQueue.add(async () => {
         observationCount.value = await Remote.fetch(view.observationCount.bind(view))
       })
@@ -209,28 +216,33 @@ export default defineComponent({
       )
     }
 
-    function loadViewDefinition (view) {
+    function initProjection (view) {
       // Get all the controls from the view
       const projection = projectionFromView(view)
-      console.log('projection from view', projection)
-      filters.value = projection.filters
       page.value = projection.page
       pageSize.value = projection.pageSize
       sortDimension.value = projection.sortDimension
       sortDirection.value = projection.sortDirection
-      cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
-      debugCounter.value = debugCounter.value+1
-      debugView.value = view
     }
 
-    function updateView (view) {
-      loadViewDefinition(view)
+    function initFilters (view) {
+      // Load filters
+      filters.value = filtersFromView(view)
+      cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+    }
+
+    function initView (view) {
+      initProjection(view)
+      initFilters(view)
       fetchObservations(view)
       fetchLabels(view)
+
+      currentView.value = view
+      debugCounter.value = debugCounter.value + 1
     }
 
-    onMounted(() => updateView(view.value))
-    watch(view, () => updateView(view))
+    onMounted(() => initView(view.value))
+    watch(view, () => initView(view))
 
     return {
       page,
@@ -244,7 +256,7 @@ export default defineComponent({
       updateObservations,
       cubeDimensions,
       cubePointer,
-      debugView,
+      currentView,
       debugCounter,
       debugOpen
     }
