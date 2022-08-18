@@ -17,9 +17,12 @@ onMounted(() => {
   source.value = new URL(window.location.href)
 })
 
-function copyURL () {
-  source.value = new URL(window.location.href)
-  copy()
+async function copyURL () {
+  const shortenerUrl = new URL('https://s.zazuko.com/api/v1/shorten/')
+  shortenerUrl.searchParams.set('url', window.location.href)
+  const response = await fetch(shortenerUrl.toString())
+  source.value = await response.text()
+  await copy()
 }
 
 </script>
