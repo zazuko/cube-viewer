@@ -17,10 +17,11 @@ function filtersToView ({
       operation,
       arg
     } of dimensionFilters) {
+      // const operationTerm = operation.term ? operation.term : operation
       const viewDimension = view.dimension({ cubeDimension: dimensionPath })
       view.addFilter(new Filter({
         dimension: viewDimension,
-        operation: operation.term,
+        operation: operation,
         arg
       }))
     }
