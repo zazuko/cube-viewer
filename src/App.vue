@@ -61,6 +61,11 @@ function setViewInput (value) {
   viewInput.value = value
 }
 
+function updateSource(source){
+  params.endpointUrl = source.endpoint
+  console.log('updateSource',source)
+}
+
 </script>
 
 <template>
@@ -74,6 +79,7 @@ function setViewInput (value) {
       v-model:source="source"
       v-model:language="language"
       @setViewInput="setViewInput"
+      @update:source="updateSource"
     />
     <viewer
       v-if="inputParameterIsValid()"
