@@ -4,9 +4,17 @@ import { ViewBuilder } from 'rdf-cube-view-query/lib/viewUtils.js'
 import * as ns from '../../namespace.js'
 import { DEFAULT_PAGE_SIZE } from './projection.js'
 
-function viewFromCube ({ cube }) {
+async function viewFromCubeUri ({ source, cubeUri }) {
+  const cube = await source.cube(cubeUri)
   cube.source = CubeSource.fromSource(cube.source, cube)
-  return View.fromCube(cube)
+  const view = View.fromCube(cube)
+  return applyDefaults({ view })
+}
+
+async function viewFromViewUri ({ source, viewUri }) {
+  const view = await source.view(viewUri)
+  await view.fetchCubesShapes()
+  return applyDefaults({ view })
 }
 
 async function viewFromDataset ({
@@ -40,5 +48,5 @@ function applyDefaults ({ view }) {
 }
 
 export {
-  viewFromCube, applyDefaults, viewFromDataset
+  viewFromCubeUri, viewFromDataset, viewFromViewUri
 }

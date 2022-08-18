@@ -140,7 +140,7 @@ export default defineComponent({
       view
     } = toRefs(props)
 
-    const currentView = ref()
+    const currentView = shallowRef()
     const debugOpen = ref(false)
     const debugCounter = ref(1)
 
@@ -300,9 +300,9 @@ export default defineComponent({
       this.$emit('updateDataset', arg)
     },
 
-    updateView (arg) {
-      this.$emit('updateView', arg)
-    },
+    // updateView (arg) {
+    //   this.$emit('updateView', arg)
+    // },
 
     isNumericScale (dimension) {
       const scaleType = dimension.ptr.out(ns.qudt.scaleType).term

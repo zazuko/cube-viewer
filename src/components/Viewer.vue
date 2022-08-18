@@ -1,14 +1,133 @@
+<script setup>
+/* eslint-disable */
+import { InformationCircleIcon } from '@heroicons/vue/outline'
+import { useAsyncState } from '@vueuse/core'
+import { Source } from 'rdf-cube-view-query'
+import { computed, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
+import * as ns from '../namespace'
+import { applyDefaults, viewFromCubeUri, viewFromDataset, viewFromViewUri } from './common/viewLoaders.js'
+import LoadingIcon from './icons/LoadingIcon.vue'
+
+import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
+import TabularView from './TabularView.vue'
+
+const DELAY = 0
+const props = defineProps({
+  source: {
+    type: Source,
+    required: true
+  },
+  viewInput: {
+    type: Object
+  },
+  language: {
+    type: [String, Array],
+    required: false
+  }
+})
+
+const view = shallowRef(null)
+
+onMounted(async () => {
+  await initFromProps()
+})
+
+watch(() => props.viewInput, () => initFromProps())
+watch(() => props.source, () => initFromProps())
+
+const {
+  isLoading,
+  state,
+  isReady,
+  execute,
+  error
+} = useAsyncState(
+  (args) => {
+    return fetchView(args)
+  },
+  {},
+  {
+    delay: DELAY,
+    resetOnExecute: false
+  }
+)
+
+const isMetadataOpen = ref(false)
+
+async function initFromProps () {
+  await execute(DELAY, {
+    source: props.source,
+    viewInput: props.viewInput,
+  })
+}
+
+async function updateDataset ({ dataset }) {
+  console.log('Updating quads from children', dataset)
+  await execute(DELAY, {
+    source: props.source,
+    viewInput: {
+      dataset
+    },
+  })
+}
+
+async function fetchView ({
+  source,
+  viewInput,
+}) {
+  const {cubeUri, viewUri, dataset} = viewInput
+  if (cubeUri) {
+    return await viewFromCubeUri({ source, cubeUri })
+  } else if (viewUri) {
+    return await viewFromViewUri({source, viewUri})
+  } else if (dataset) {
+    return await viewFromDataset({
+      dataset,
+      fallbackSource: source
+    })
+  } else {
+    throw Error(`No cubeUri, viewUri or dataset`)
+  }
+}
+
+const title = computed(() => {
+  if (!view.value) {
+    return null
+  }
+  const title = view.value.ptr.out(ns.schema.name, { language: props.language }).value
+  return title ?? null
+})
+
+const description = computed(() => {
+  if (!view.value) {
+    return null
+  }
+  const description = view.value.ptr.out(ns.schema.description, { language: props.language }).value
+  return description ?? null
+})
+
+const errorMessage = computed(() => {
+  if (error && ! isLoading) {
+    return error
+  }
+  return undefined
+})
+
+
+</script>
+
 <template>
   <div class="p-4">
-    <div v-if="item.isLoading">
+    <div v-if="isLoading">
       <loading-icon/>
     </div>
-    <div v-else-if="item.error" class="text-red-500">
-      {{ item.error }}
+
+    <div v-if="errorMessage" class="text-red-500">
+      {{ errorMessage }}
     </div>
-    <div class="flex flex-col gap-4" v-else>
-      <header>
-        <h1 class="font-bold mb-2" :title="item.data.term.value">
+    <div class="flex flex-col gap-4" v-if="isReady">
+      <header v-if="state">
+        <h1 class="font-bold mb-2" :title="state.term.value">
           <span v-if="title">{{ title }}</span>
           <span v-else class="text-gray-500">Untitled</span>
         </h1>
@@ -21,187 +140,17 @@
           </button>
           <resource-details-dialog
             title="Metadata"
-            :pointer="item.data.ptr"
+            :pointer="state.ptr"
             :is-open="isMetadataOpen"
             @close="isMetadataOpen = false"
           />
         </div>
       </header>
       <tabular-view
-        @updateView="updateView"
         @updateDataset="updateDataset"
-        :key="count"
-        v-if="view"
-        :view="view"
+        v-if="state"
+        :view="state"
         :language="language"/>
-      <div v-if="importError && !view" class="text-red-500">
-        {{ importError }}
-      </div>
     </div>
   </div>
 </template>
-<script>
-/* eslint-disable */
-import { InformationCircleIcon } from '@heroicons/vue/outline'
-import { Source } from 'rdf-cube-view-query'
-import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
-import * as ns from '../namespace'
-import * as Remote from '../remote'
-import { applyDefaults, viewFromCube, viewFromDataset } from './common/viewLoaders.js'
-import LoadingIcon from './icons/LoadingIcon.vue'
-
-import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
-import TabularView from './TabularView.vue'
-
-async function fetchView ({
-  entityType,
-  uri,
-  data,
-  source
-}) {
-  if (entityType === 'cubes') {
-    const cube = await source.cube(uri)
-    return applyDefaults({ view: viewFromCube({ cube }) })
-  } else if (entityType === 'views') {
-    const view = await source.view(uri)
-    await view.fetchCubesShapes()
-    return applyDefaults({ view })
-  } else {
-    throw Error(`entityType ${entityType} not recognized`)
-  }
-}
-
-
-export default defineComponent({
-  name: 'ItemViewer',
-  components: {
-    InformationCircleIcon,
-    LoadingIcon,
-    ResourceDetailsDialog,
-    TabularView,
-  },
-  props: {
-    source: {
-      type: Source,
-      required: true,
-    },
-    uri: {
-      type: String,
-    },
-    entityType: {
-      type: String,
-    },
-    language: {
-      type: [String, Array],
-      required: false,
-    },
-  },
-
-  setup (props) {
-    const {
-      source,
-      uri,
-      entityType,
-    } = toRefs(props)
-
-    const importError = ref()
-    const refreshHack = ref(1)
-    const item = shallowRef(Remote.loading())
-    const view = shallowRef(null)
-    const fetchItem = async () => {
-      if (typeof item.value?.data?.clear === 'function') {
-        item.value.data.clear()
-      }
-
-      item.value = Remote.loading()
-
-      try {
-        view.value = await fetchView({
-          source: source.value,
-          entityType: entityType.value,
-          uri: uri.value,
-        })
-        importError.value = null
-        const itemData = view.value
-
-        if (itemData) {
-          item.value = Remote.loaded(itemData)
-        } else {
-          if (typeof item.value?.data?.clear === 'function') {
-            item.value.data.clear()
-          }
-          item.value = Remote.error(`Could not find ${uri.value}`)
-        }
-      } catch (e) {
-        console.error(e)
-
-        if (typeof item.value?.data?.clear === 'function') {
-          item.value.data.clear()
-        }
-        item.value = Remote.error(e)
-      }
-    }
-    onMounted(fetchItem)
-    watch(uri, fetchItem)
-
-    const isMetadataOpen = ref(false)
-
-    function updateView ({ view }) {
-      console.log('view updated from children', view)
-      view.value = view
-      refreshHack.value = refreshHack.value + 1
-    }
-
-    async function updateDataset ({ dataset }) {
-      console.log('quads updated from children', dataset)
-      try {
-        const view = await viewFromDataset({
-          dataset,
-          fallbackSource: source.value
-        })
-        view.value = applyDefaults(view)
-        importError.value = null
-      } catch (error){
-        importError.value = error
-      }
-
-      refreshHack.value = refreshHack.value + 1
-    }
-
-    return {
-      item,
-      isMetadataOpen,
-      view,
-      count: refreshHack,
-      updateView,
-      updateDataset,
-      source,
-      importError
-    }
-  },
-
-  computed: {
-
-    title () {
-      if (!this.item.data) {
-        return null
-      }
-      const title = this.item.data.ptr.out(ns.schema.name, { language: this.language }).value
-      return title ?? null
-    },
-
-    description () {
-      if (!this.item.data) {
-        return null
-      }
-      const description = this.item.data.ptr.out(ns.schema.description, { language: this.language }).value
-      return description ?? null
-    },
-
-  },
-
-  methods: {},
-})
-
-
-</script>

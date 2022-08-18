@@ -20,19 +20,21 @@
   "dependencies": {
     "@headlessui/vue": "^1.1.1",
     "@heroicons/vue": "^1.0.1",
+    "@rdfjs-elements/rdf-editor": "^0.5.3",
     "@rdfjs/formats-common": "^2.2.0",
     "@tailwindcss/forms": "^0.5.0",
+    "@vueuse/core": "^9.1.0",
     "@zazuko/rdf-vocabularies": "^2021.5.3",
     "buffer": "^6.0.3",
     "core-js": "^3.11.0",
+    "n3": "^1.16.2",
     "process": "^0.11.10",
     "promise-the-world": "^1.0.1",
     "rdf-cube-view-query": "^1.8.2",
     "rdf-ext": "^2.0.1",
     "stream-browserify": "^3.0.0",
     "vue": "^3.0.0",
-    "vue3-webcomponent-wrapper": "^0.1.4",
-    "@rdfjs-elements/rdf-editor": "^0.5.3"
+    "vue3-webcomponent-wrapper": "^0.1.4"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~5.0.0-rc.1",
