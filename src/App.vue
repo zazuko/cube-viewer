@@ -72,9 +72,11 @@ function inputParameterIsValid () {
 }
 
 function setViewInput (value) {
+  console.log('setViewInput',value)
   params.viewUri = value.viewUri ? value.viewUri : undefined
   params.cubeUri = value.cubeUri ? value.cubeUri : undefined
-  params.view = undefined
+  params.view = value.dataset ? value.dataset.toString() : undefined
+
   viewInput.value = value
 }
 
@@ -108,6 +110,7 @@ function updateSource(source){
         :source="source"
         :language="language"
         :viewInput="viewInput"
+        @setViewInput="setViewInput"
         class="bg-white rounded shadow-lg overflow-x-auto"
       />
     </template>

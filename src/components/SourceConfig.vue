@@ -4,7 +4,7 @@ import { XCircleIcon } from '@heroicons/vue/outline'
 import { CogIcon } from '@heroicons/vue/solid'
 import { useUrlSearchParams } from '@vueuse/core'
 import { Source } from 'rdf-cube-view-query'
-import { defineEmits, defineProps, onMounted, ref } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
 import CubeSelector from './CubeSelector.vue'
 
 import SelectBox from './SelectBox.vue'
@@ -35,17 +35,34 @@ const emit = defineEmits(['update:language', 'update:source', 'setViewInput'])
 
 const open = ref()
 const options = ref()
-
-const entityType = ref()
+const ifNoInputSelected = ref('cubes')
 
 onMounted(() => {
-  entityType.value = props.viewInput?.viewUri ? 'views' : 'cubes'
   open.value = !(props.source?.endpoint)
   options.value = {
     endpointUrl: params.endpointUrl ? params.endpointUrl : process.env.VUE_APP_ENDPOINT_URL,
     user: params.user,
     password: params.password,
     sourceGraph: params.sourceGraph
+  }
+})
+
+const entityType = computed(() => {
+  if (props.viewInput) {
+    const {
+      cubeUri,
+      viewUri,
+      dataset
+    } = props.viewInput
+    if (cubeUri) {
+      return 'cubes'
+    } else if (viewUri) {
+      return 'views'
+    } else if (dataset) {
+      return 'link'
+    } else {
+      return ifNoInputSelected.value
+    }
   }
 })
 
@@ -68,7 +85,8 @@ function updateSource () {
 
 function switchEntityType (arg) {
   console.log('updateEntityType', arg)
-  entityType.value = arg
+  ifNoInputSelected.value = arg
+  emit('setViewInput', {})
 }
 
 function updateCubeUri (cubeUri) {
@@ -79,9 +97,33 @@ function updateViewUri (viewUri) {
   emit('setViewInput', { viewUri })
 }
 
+function clearInput (value) {
+  emit('setViewInput', {})
+}
+
+const isShareable = computed(()=>{
+
+  if (!props.source) {
+    return false
+  }
+
+  if (!(props.viewInput)) {
+    return false
+  }
+
+  const {
+    cubeUri,
+    viewUri,
+    dataset
+  } = props.viewInput
+  return cubeUri || viewUri || dataset
+})
+
+
 </script>
 
 <template>
+
   <div class="p-3 bg-white shadow-lg flex justify-between items-center">
     <form @submit.prevent="updateSource" v-if="open" class="w-1/3 flex flex-col gap-2">
       <label class="form-field">
@@ -115,27 +157,29 @@ function updateViewUri (viewUri) {
     </form>
 
     <div v-show="!open" class="flex items-end gap-2">
-      <select-box :options="entityTypes" :model-value="entityType" @update:model-value="switchEntityType">
-        <template v-slot:button="{ selected }">
-          {{ selected }}
-        </template>
-        <template v-slot:option="{ option }">
-          {{ option }}
-        </template>
-      </select-box>
+      <template v-if="entityType==='views' || entityType==='cubes' ">
+        <select-box :options="entityTypes" :model-value="entityType" @update:model-value="switchEntityType">
+          <template v-slot:button="{ selected }">
+            {{ selected }}
+          </template>
+          <template v-slot:option="{ option }">
+            {{ option }}
+          </template>
+        </select-box>
 
-      <cube-selector
-        v-if="source && entityType==='cubes' "
-        :source="source"
-        :cube-uri="viewInput.cubeUri"
-        @select="updateCubeUri"
-      />
-      <view-selector
-        v-if="source && entityType==='views'"
-        :source="source"
-        :view-uri="viewInput.viewUri"
-        @select="updateViewUri"
-      />
+        <cube-selector
+          v-if="source && entityType==='cubes' "
+          :source="source"
+          :cube-uri="viewInput.cubeUri"
+          @select="updateCubeUri"
+        />
+        <view-selector
+          v-if="source && entityType==='views'"
+          :source="source"
+          :view-uri="viewInput.viewUri"
+          @select="updateViewUri"
+        />
+      </template>
       <button class="button" @click="open = true">
         <cog-icon class="h-4 w-4"/>
         Endpoint config
@@ -148,8 +192,16 @@ function updateViewUri (viewUri) {
           {{ option }}
         </template>
       </select-box>
+      <template v-if="entityType==='link'">
+        <button type="button" class="button-text" title="Close" @click="clearInput">
+          Clear
+          <x-circle-icon class="h-6 w-6"/>
+        </button>
+      </template>
     </div>
 
-    <share-url-button v-if="source && viewInput.cubeUri" :source="source" :cubeUri="viewInput.cubeUri"/>
+
+    <share-url-button v-if="isShareable"/>
+
   </div>
 </template>

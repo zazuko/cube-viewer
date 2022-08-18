@@ -3,7 +3,7 @@
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { useAsyncState } from '@vueuse/core'
 import { Source } from 'rdf-cube-view-query'
-import { computed, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import { applyDefaults, viewFromCubeUri, viewFromDataset, viewFromViewUri } from './common/viewLoaders.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
@@ -25,6 +25,8 @@ const props = defineProps({
     required: false
   }
 })
+
+const emit = defineEmits(['setViewInput'])
 
 const view = shallowRef(null)
 
@@ -62,13 +64,7 @@ async function initFromProps () {
 }
 
 async function updateDataset ({ dataset }) {
-  console.log('Updating quads from children', dataset)
-  await execute(DELAY, {
-    source: props.source,
-    viewInput: {
-      dataset
-    },
-  })
+  emit('setViewInput', { dataset })
 }
 
 async function fetchView ({
