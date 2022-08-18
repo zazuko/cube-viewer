@@ -18,9 +18,12 @@ onMounted(() => {
 })
 
 async function copyURL () {
-  const shortenerUrl = new URL('https://s.zazuko.com/api/v1/shorten/')
-  shortenerUrl.searchParams.set('url', window.location.href)
-  const response = await fetch(shortenerUrl.toString())
+  const response = await fetch('https://s.zazuko.com/api/v1/shorten/', {
+    method: 'POST',
+    body: new URLSearchParams({
+      url: window.location.href
+    })
+  })
   source.value = await response.text()
   await copy()
 }

@@ -84,7 +84,6 @@ function updateSource () {
 }
 
 function switchEntityType (arg) {
-  console.log('updateEntityType', arg)
   ifNoInputSelected.value = arg
   emit('setViewInput', {})
 }
