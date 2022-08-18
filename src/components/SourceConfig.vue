@@ -40,7 +40,7 @@ const entityType = ref()
 
 onMounted(() => {
   entityType.value = props.viewInput?.viewUri ? 'views' : 'cubes'
-  open.value = !(props.viewInput.cubeUri || props.viewInput.viewUri || props.source?.endpoint)
+  open.value = !(props.source?.endpoint)
   options.value = {
     endpointUrl: params.endpointUrl ? params.endpointUrl : process.env.VUE_APP_ENDPOINT_URL,
     user: params.user,
@@ -61,8 +61,6 @@ function isValid () {
 function updateSource () {
   if (isValid()) {
     const source = new Source(options.value)
-    params.endpointUrl = options.value.endpointUrl
-    params.sourceGraph = options.value.sourceGraph ? options.value.sourceGraph : undefined
     emit('update:source', source)
     open.value = false
   }
