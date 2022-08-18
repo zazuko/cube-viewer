@@ -1,12 +1,12 @@
 <script setup>
 import { useUrlSearchParams } from '@vueuse/core'
+import { Parser } from 'n3'
 import { Source } from 'rdf-cube-view-query'
+import rdf from 'rdf-ext'
 /* eslint-disable */
 import { onMounted, ref } from 'vue'
 import SourceConfig from './components/SourceConfig.vue'
 import Viewer from './components/Viewer.vue'
-import { Parser } from 'n3'
-import rdf from 'rdf-ext'
 
 const parser = new Parser()
 
@@ -19,26 +19,20 @@ const source = ref(null)
 
 const viewInput = ref()
 
-function onlyOne ({
-  cubeUri,
-  viewUri,
-  view
-}) {
-  if (cubeUri) {
-    return { cubeUri }
-  }
-  if (viewUri) {
-    return { viewUri }
-  }
-  if (view) {
-    const quads = parser.parse(view)
-    const dataset = rdf.dataset().addAll(quads)
-    return { dataset }
-  }
-  return {}
-}
-
+const initError = ref()
 onMounted(() => {
+
+  // Tries to parse a view
+  let dataset = undefined
+  if (params.view) {
+    try {
+      const quads = parser.parse(params.view)
+      dataset = rdf.dataset().addAll(quads)
+    } catch (e) {
+      initError.value = e
+    }
+  }
+
   if (params.endpointUrl) {
     source.value = new Source({
       endpointUrl: params.endpointUrl,
@@ -48,22 +42,44 @@ onMounted(() => {
     })
   }
 
-  viewInput.value = onlyOne({ ...params })
+  viewInput.value = onlyOne({
+    cubeUri: params.cubeUri,
+    viewUri: params.viewUri,
+    dataset
+  })
 })
+
+// Defines order also
+function onlyOne ({
+  cubeUri,
+  viewUri,
+  dataset
+}) {
+  if (dataset) {
+    return { dataset }
+  }
+  if (cubeUri) {
+    return { cubeUri }
+  }
+  if (viewUri) {
+    return { viewUri }
+  }
+  return {}
+}
 
 function inputParameterIsValid () {
   return source.value && (viewInput.value.viewUri || viewInput.value.cubeUri || viewInput.value.dataset)
 }
 
 function setViewInput (value) {
-  params.viewUri = value.viewUri?value.viewUri:undefined
-  params.cubeUri = value.cubeUri?value.cubeUri:undefined
+  params.viewUri = value.viewUri ? value.viewUri : undefined
+  params.cubeUri = value.cubeUri ? value.cubeUri : undefined
+  params.view = undefined
   viewInput.value = value
 }
 
 function updateSource(source){
   params.endpointUrl = source.endpoint
-  console.log('updateSource',source)
 }
 
 </script>
@@ -73,20 +89,27 @@ function updateSource(source){
     <h1 class="font-bold text text-gray-600 uppercase">
       Zazuko Cube Viewer
     </h1>
-    <source-config
-      v-if="viewInput"
-      :viewInput="viewInput"
-      v-model:source="source"
-      v-model:language="language"
-      @setViewInput="setViewInput"
-      @update:source="updateSource"
-    />
-    <viewer
-      v-if="inputParameterIsValid()"
-      :source="source"
-      :language="language"
-      :viewInput="viewInput"
-      class="bg-white rounded shadow-lg overflow-x-auto"
-    />
+    <template v-if="initError">
+      <div class="text-red-500">
+        {{ initError }}
+      </div>
+    </template>
+    <template v-else>
+      <source-config
+        v-if="viewInput"
+        :viewInput="viewInput"
+        v-model:source="source"
+        v-model:language="language"
+        @setViewInput="setViewInput"
+        @update:source="updateSource"
+      />
+      <viewer
+        v-if="inputParameterIsValid()"
+        :source="source"
+        :language="language"
+        :viewInput="viewInput"
+        class="bg-white rounded shadow-lg overflow-x-auto"
+      />
+    </template>
   </div>
 </template>

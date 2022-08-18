@@ -1,6 +1,17 @@
 /* eslint-disable */
 import { Filter } from 'rdf-cube-view-query/index.js'
 
+function toTerm (obj) {
+
+  if (obj.termType === 'NamedNode') {
+    return obj
+  }
+  if (obj.term) {
+    return obj.term
+  }
+  throw Error('Could not retrieve term')
+}
+
 function filtersToView ({
   view,
   filters
@@ -21,7 +32,7 @@ function filtersToView ({
       const viewDimension = view.dimension({ cubeDimension: dimensionPath })
       view.addFilter(new Filter({
         dimension: viewDimension,
-        operation: operation,
+        operation: toTerm(operation),
         arg
       }))
     }
@@ -52,7 +63,7 @@ function filtersFromView (view) {
     // This is the way the filter Vue component likes it.
     filters.get(path).push({
       dimension: viewDimension.cubeDimensions[0],
-      operation: filter.operation,
+      operation: toTerm(filter.operation),
       arg: filter.arg
     })
   }
