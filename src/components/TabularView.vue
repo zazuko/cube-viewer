@@ -1,3 +1,247 @@
+
+<script setup>
+/* eslint-disable */
+import { XCircleIcon } from '@heroicons/vue/outline'
+import queue from 'promise-the-world/queue.js'
+import { LookupSource, Source, View } from 'rdf-cube-view-query'
+import rdf from 'rdf-ext'
+import { computed, defineComponent, defineEmits, defineProps, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
+import * as ns from '../namespace'
+import * as Remote from '../remote'
+import { getBoundedViewPointer } from './common/debug.js'
+import { filtersFromView, filtersToView } from './common/filters.js'
+import { projectionFromView, updateViewProjection } from './common/projection.js'
+import DebugBox from './debug/DebugBox.vue'
+import DimensionHeader from './DimensionHeader.vue'
+import LoadingIcon from './icons/LoadingIcon.vue'
+import ObservationValue from './ObservationValue.vue'
+import PaginationMenu from './PaginationMenu.vue'
+
+const emit = defineEmits(['updateDataset'])
+
+const props = defineProps({
+  view: {
+    type: Object,
+    required: true,
+  },
+  language: {
+    type: [String, Array],
+    required: true,
+  },
+})
+
+const currentView = shallowRef()
+const debugOpen = ref(false)
+const debugCounter = ref(1)
+
+const cubePointer = ref()
+const filters = ref()
+const page = ref()
+const pageSize = ref()
+const sortDimension = shallowRef()
+const sortDirection = shallowRef()
+const cubeDimensions = ref()
+const queryQueue = queue(1)
+
+// Used when controls change
+const updateObservations = async () => {
+  let v = updateViewProjection({
+    view: currentView.value,
+    projection: {
+      page: page.value,
+      pageSize: pageSize.value,
+      sortDimension: sortDimension.value,
+      sortDirection: sortDirection.value,
+      filters: filters.value
+    }
+  })
+  v = filtersToView({
+    view: v,
+    filters: filters.value
+  })
+  await fetchObservations(v)
+  currentView.value = v
+  debugCounter.value = debugCounter.value + 1
+}
+
+const observations = ref(Remote.loading())
+const observationCount = ref(Remote.loading())
+const fetchObservations = async (view) => {
+  observations.value = Remote.loading()
+  if (!view) return
+  await queryQueue.add(async () => {
+    try {
+      observations.value = await Remote.fetch(view.observations.bind(view))
+    } catch (error){
+      console.log(error)
+      console.log('view that produced the error')
+      console.log(getBoundedViewPointer(view).dataset.toString())
+    }
+  })
+  await queryQueue.add(async () => {
+    observationCount.value = await Remote.fetch(view.observationCount.bind(view))
+  })
+}
+
+
+// Labels are stored as Record<dimensionURI, Clownface>
+const labels = ref({})
+const fetchLabels = async (view) => {
+  if (!view || !view) return
+
+  const dimensions = view.dimensions
+
+  const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
+    return queryQueue.add(async () => fetchDimensionLabels(dimension, view))
+  }))
+
+  return dimensionsWithLabels.filter(notNull => notNull).reduce(
+    (acc, [dimensionPath, dimensionLabels]) => ({
+      ...acc,
+      [dimensionPath.value]: dimensionLabels
+    }),
+    {}
+  )
+}
+
+function initProjection (view) {
+  // Get all the controls from the view
+  const projection = projectionFromView(view)
+  page.value = projection.page
+  pageSize.value = projection.pageSize
+  sortDimension.value = projection.sortDimension
+  sortDirection.value = projection.sortDirection
+}
+
+function initFilters (view) {
+  // Load filters
+  filters.value = filtersFromView(view)
+  cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+}
+
+function initView (view) {
+  initProjection(view)
+  initFilters(view)
+  fetchObservations(view)
+  fetchLabels(view)
+
+  currentView.value = view
+  debugCounter.value = debugCounter.value + 1
+}
+
+
+onMounted(()=>{
+  const cubeTerm = props.view.dimensions[0].cubes[0]
+  cubePointer.value = props.view.ptr.node(cubeTerm)
+  initView(props.view)
+})
+
+watch(() => props.view, () => initView(props.view))
+
+
+const filtersSummary = computed(() => {
+  const language = props.language
+  const ptr = props.view.ptr
+  const cube = props.view.cubes()[0]
+  return [...filters.value.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
+    dimensionFilters.map(({
+      dimension,
+      operation,
+      arg,
+    }, index) => {
+      const dimensionLabel = dimension.out(ns.schema.name, { language }).value
+      // const dimensionLabel = ptr.node(dimension).out(ns.schema.name, { language }).value
+      const dimensionValueLabels = labels.value[dimension.path.value]
+      const valueLabel = (
+        dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
+        ptr.node(arg).out(ns.schema.name, { language }).value ||
+        ns.shrink(arg.value, cube.value)
+      )
+      return {
+        dimensionPath,
+        index,
+        label: `${dimensionLabel} ${operation.label} ${valueLabel}`,
+      }}))
+})
+
+function updateDataset (arg) {
+  emit('updateDataset', arg)
+}
+
+function isNumericScale (dimension) {
+  const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
+  return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
+}
+
+function isMeasureDimension (dimension) {
+  return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
+}
+
+function updatePage (pageArg) {
+  page.value = pageArg
+  updateObservations()
+}
+
+function updatePageSize (pageSizeArg) {
+  pageSize.value = pageSizeArg
+  updateObservations()
+}
+
+function updateSort (dimension, direction) {
+  sortDimension.value = dimension
+  sortDirection.value = direction
+  updateObservations()
+}
+
+function updateDimensionFilters (cubeDimensionArg, filtersArg) {
+  filters.value.set(cubeDimensionArg.path.value, filtersArg)
+  updateObservations()
+}
+
+function removeFilter ({
+  dimensionPath,
+  index,
+}) {
+  filters.value.get(dimensionPath).splice(index, 1)
+  updateObservations()
+}
+
+const fetchDimensionLabels = async (dimension, cubeSource) => {
+  const cubeDimension = dimension.cubeDimensions[0]
+  if (!cubeDimension) return undefined
+  const path = cubeDimension.path
+
+  const dimensionLabels = rdf.clownface({ dataset: rdf.dataset() })
+
+  if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
+    const view = new View({ parent: cubeSource })
+
+    const source = LookupSource.fromSource(dimension.source)
+
+    view.addDimension(dimension)
+    view.addDimension(view.createDimension({
+      source,
+      path: ns.schema.name,
+      join: dimension,
+      as: ns.schema.name,
+    }))
+
+    const data = await view.observations()
+    for (const row of data) {
+      const term = row[path.value]
+      const label = row[ns.schema.name.value]
+      dimensionLabels.node(term).addOut(ns.schema.name, label)
+    }
+  }
+  return [path, dimensionLabels]
+}
+
+defineExpose({
+  currentView,
+})
+
+</script>
+
 <template>
 
   <div>
@@ -95,285 +339,3 @@
     </div>
   </div>
 </template>
-
-<script>
-/* eslint-disable */
-import { XCircleIcon } from '@heroicons/vue/outline'
-import queue from 'promise-the-world/queue.js'
-import { LookupSource, View } from 'rdf-cube-view-query'
-import rdf from 'rdf-ext'
-import { defineComponent, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
-import * as ns from '../namespace'
-import * as Remote from '../remote'
-import { getBoundedViewPointer } from './common/debug.js'
-import { filtersFromView, filtersToView } from './common/filters.js'
-import { projectionFromView, updateViewProjection } from './common/projection.js'
-import DebugBox from './debug/DebugBox.vue'
-import DimensionHeader from './DimensionHeader.vue'
-import LoadingIcon from './icons/LoadingIcon.vue'
-import ObservationValue from './ObservationValue.vue'
-import PaginationMenu from './PaginationMenu.vue'
-
-export default defineComponent({
-  name: 'TabularView',
-  components: {
-    DimensionHeader,
-    LoadingIcon,
-    ObservationValue,
-    PaginationMenu,
-    XCircleIcon,
-    DebugBox,
-  },
-  props: {
-    view: {
-      type: Object,
-      required: true,
-    },
-    language: {
-      type: [String, Array],
-      required: true,
-    },
-  },
-
-  setup (props) {
-    const {
-      view
-    } = toRefs(props)
-
-    const currentView = shallowRef()
-    const debugOpen = ref(false)
-    const debugCounter = ref(1)
-
-    const cubeTerm = view.value.dimensions[0].cubes[0]
-    const cubePointer = ref()
-    cubePointer.value = view.value.ptr.node(cubeTerm)
-
-    const filters = ref()
-    const page = ref()
-    const pageSize = ref()
-    const sortDimension = shallowRef()
-    const sortDirection = shallowRef()
-    const cubeDimensions = ref()
-    const queryQueue = queue(1)
-
-    // Used when controls change
-    const updateObservations = async () => {
-      let v = updateViewProjection({
-        view: currentView.value,
-        projection: {
-          page: page.value,
-          pageSize: pageSize.value,
-          sortDimension: sortDimension.value,
-          sortDirection: sortDirection.value,
-          filters: filters.value
-        }
-      })
-      v = filtersToView({
-        view: v,
-        filters: filters.value
-      })
-      await fetchObservations(v)
-      currentView.value = v
-      debugCounter.value = debugCounter.value + 1
-    }
-
-    const observations = ref(Remote.loading())
-    const observationCount = ref(Remote.loading())
-    const fetchObservations = async (view) => {
-      observations.value = Remote.loading()
-      if (!view) return
-      await queryQueue.add(async () => {
-        try {
-          observations.value = await Remote.fetch(view.observations.bind(view))
-        } catch (error){
-          console.log(error)
-          console.log('view that produced the error')
-          console.log(getBoundedViewPointer(view).dataset.toString())
-        }
-      })
-      await queryQueue.add(async () => {
-        observationCount.value = await Remote.fetch(view.observationCount.bind(view))
-      })
-    }
-
-    // Labels are stored as Record<dimensionURI, Clownface>
-    const labels = ref({})
-    const fetchLabels = async (view) => {
-      if (!view || !view) return
-
-      const dimensions = view.dimensions
-
-      const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
-        return queryQueue.add(async () => fetchDimensionLabels(dimension, view))
-      }))
-
-      return dimensionsWithLabels.filter(notNull => notNull).reduce(
-        (acc, [dimensionPath, dimensionLabels]) => ({
-          ...acc,
-          [dimensionPath.value]: dimensionLabels
-        }),
-        {}
-      )
-    }
-
-    function initProjection (view) {
-      // Get all the controls from the view
-      const projection = projectionFromView(view)
-      page.value = projection.page
-      pageSize.value = projection.pageSize
-      sortDimension.value = projection.sortDimension
-      sortDirection.value = projection.sortDirection
-    }
-
-    function initFilters (view) {
-      // Load filters
-      filters.value = filtersFromView(view)
-      cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
-    }
-
-    function initView (view) {
-      initProjection(view)
-      initFilters(view)
-      fetchObservations(view)
-      fetchLabels(view)
-
-      currentView.value = view
-      debugCounter.value = debugCounter.value + 1
-    }
-
-    onMounted(() => initView(view.value))
-    watch(view, () => initView(view))
-
-    return {
-      page,
-      pageSize,
-      sortDimension,
-      sortDirection,
-      filters,
-      observations,
-      observationCount,
-      labels,
-      updateObservations,
-      cubeDimensions,
-      cubePointer,
-      currentView,
-      debugCounter,
-      debugOpen
-    }
-  },
-
-  computed: {
-
-    filtersSummary () {
-      const language = this.language
-      const ptr = this.view.ptr
-      const cube = this.view.cubes()[0]
-
-      return [...this.filters.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
-        dimensionFilters.map(({
-          dimension,
-          operation,
-          arg,
-        }, index) => {
-          const dimensionLabel = dimension.out(ns.schema.name, { language }).value
-          // const dimensionLabel = ptr.node(dimension).out(ns.schema.name, { language }).value
-          const dimensionValueLabels = this.labels[dimension.path.value]
-          const valueLabel = (
-            dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
-            ptr.node(arg).out(ns.schema.name, { language }).value ||
-            ns.shrink(arg.value, cube.value)
-          )
-
-          return {
-            dimensionPath,
-            index,
-            label: `${dimensionLabel} ${operation.label} ${valueLabel}`,
-          }
-        })
-      )
-    },
-  },
-
-  methods: {
-
-    updateDataset (arg) {
-      this.$emit('updateDataset', arg)
-    },
-
-    // updateView (arg) {
-    //   this.$emit('updateView', arg)
-    // },
-
-    isNumericScale (dimension) {
-      const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
-      return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
-    },
-
-    isMeasureDimension (dimension) {
-      return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
-    },
-
-    updatePage (page) {
-      this.page = page
-      this.updateObservations()
-    },
-
-    updatePageSize (pageSize) {
-      this.pageSize = pageSize
-      this.updateObservations()
-    },
-
-    updateSort (dimension, direction) {
-      this.sortDimension = dimension
-      this.sortDirection = direction
-      this.updateObservations()
-    },
-
-    updateDimensionFilters (cubeDimension, filters) {
-      this.filters.set(cubeDimension.path.value, filters)
-      this.updateObservations()
-    },
-
-    removeFilter ({
-      dimensionPath,
-      index,
-    }) {
-      this.filters.get(dimensionPath).splice(index, 1)
-      this.updateObservations()
-    },
-  },
-
-})
-
-const fetchDimensionLabels = async (dimension, cubeSource) => {
-  const cubeDimension = dimension.cubeDimensions[0]
-  if (!cubeDimension) return undefined
-  const path = cubeDimension.path
-
-  const dimensionLabels = rdf.clownface({ dataset: rdf.dataset() })
-
-  if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
-    const view = new View({ parent: cubeSource })
-
-    const source = LookupSource.fromSource(dimension.source)
-
-    view.addDimension(dimension)
-    view.addDimension(view.createDimension({
-      source,
-      path: ns.schema.name,
-      join: dimension,
-      as: ns.schema.name,
-    }))
-
-    const data = await view.observations()
-    for (const row of data) {
-      const term = row[path.value]
-      const label = row[ns.schema.name.value]
-      dimensionLabels.node(term).addOut(ns.schema.name, label)
-    }
-  }
-  return [path, dimensionLabels]
-}
-
-
-</script>

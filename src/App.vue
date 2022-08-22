@@ -1,9 +1,9 @@
 <script setup>
+/* eslint-disable */
 import { useUrlSearchParams } from '@vueuse/core'
 import { Parser } from 'n3'
 import { Source } from 'rdf-cube-view-query'
 import rdf from 'rdf-ext'
-/* eslint-disable */
 import { onMounted, ref } from 'vue'
 import SourceConfig from './components/SourceConfig.vue'
 import Viewer from './components/Viewer.vue'
@@ -71,17 +71,17 @@ function inputParameterIsValid () {
   return source.value && (viewInput.value.viewUri || viewInput.value.cubeUri || viewInput.value.dataset)
 }
 
+// 'Hard' updates. Forces loading of labels.
 function setViewInput (value) {
   console.log('setViewInput',value)
-  params.viewUri = value.viewUri ? value.viewUri : undefined
-  params.cubeUri = value.cubeUri ? value.cubeUri : undefined
-  params.view = value.dataset ? value.dataset.toString() : undefined
-
+  setURLParams(value)
   viewInput.value = value
 }
 
-function updateSource(source){
-  params.endpointUrl = source.endpoint
+function setURLParams (value) {
+  params.viewUri = value.viewUri ? value.viewUri : undefined
+  params.cubeUri = value.cubeUri ? value.cubeUri : undefined
+  params.view = value.dataset ? value.dataset.toString() : undefined
 }
 
 </script>
@@ -103,7 +103,6 @@ function updateSource(source){
         v-model:source="source"
         v-model:language="language"
         @setViewInput="setViewInput"
-        @update:source="updateSource"
       />
       <viewer
         v-if="inputParameterIsValid()"

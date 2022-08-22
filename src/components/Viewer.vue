@@ -109,6 +109,7 @@ const errorMessage = computed(() => {
   return undefined
 })
 
+const tabularView = ref()
 
 </script>
 
@@ -143,6 +144,7 @@ const errorMessage = computed(() => {
         </div>
       </header>
       <tabular-view
+        ref="tabularView"
         @updateDataset="updateDataset"
         v-if="state"
         :view="state"
