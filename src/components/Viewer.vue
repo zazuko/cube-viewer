@@ -1,12 +1,14 @@
 <script setup>
 /* eslint-disable */
 import { InformationCircleIcon } from '@heroicons/vue/outline'
-import { useAsyncState } from '@vueuse/core'
+import { useAsyncState, useUrlSearchParams } from '@vueuse/core'
 import { Source } from 'rdf-cube-view-query'
 import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
-import { applyDefaults, viewFromCubeUri, viewFromDataset, viewFromViewUri } from './common/viewLoaders.js'
+import { getBoundedViewPointer } from './common/debug.js'
+import { viewFromCubeUri, viewFromDataset, viewFromViewUri } from './common/viewLoaders.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
+import ShareUrlButton from './ShareUrlButton.vue'
 
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import TabularView from './TabularView.vue'
@@ -110,6 +112,22 @@ const errorMessage = computed(() => {
 })
 
 const tabularView = ref()
+const shareButton = ref()
+const params = useUrlSearchParams('history')
+
+function prepareParams(){
+  console.log('Prepare params')
+  params.viewUri = undefined
+  params.cubeUri = undefined
+  if (tabularView.value){
+    const currentView = tabularView.value.currentView
+    const dataset = getBoundedViewPointer(currentView).dataset
+    console.log('dataset',dataset.toString())
+    params.view = dataset.toString()
+    shareButton.value.copyURL(window.location.href)
+  }
+
+}
 
 </script>
 
@@ -122,12 +140,22 @@ const tabularView = ref()
     <div v-if="errorMessage" class="text-red-500">
       {{ errorMessage }}
     </div>
+
     <div class="flex flex-col gap-4" v-if="isReady">
+
       <header v-if="state">
-        <h1 class="font-bold mb-2" :title="state.term.value">
-          <span v-if="title">{{ title }}</span>
-          <span v-else class="text-gray-500">Untitled</span>
-        </h1>
+
+        <div class="flex flex-row">
+          <h1 class="font-bold mb-2 grow" :title="state.term.value">
+            <span v-if="title">{{ title }}</span>
+            <span v-else class="text-gray-500">Untitled</span>
+          </h1>
+          <share-url-button
+            ref="shareButton"
+            class="items-end"
+            @prepareParams="prepareParams"
+          />
+        </div>
         <section v-if="description" class="text-sm text-gray-700">
           {{ description }}
         </section>
@@ -142,6 +170,7 @@ const tabularView = ref()
             @close="isMetadataOpen = false"
           />
         </div>
+
       </header>
       <tabular-view
         ref="tabularView"

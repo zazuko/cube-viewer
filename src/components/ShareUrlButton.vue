@@ -3,7 +3,9 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import { ShareIcon } from '@heroicons/vue/solid'
 import { useClipboard } from '@vueuse/core'
-import { onMounted, ref } from 'vue'
+import { defineEmits, onMounted, ref } from 'vue'
+
+const emit = defineEmits(['prepareParams'])
 
 const source = ref()
 const {
@@ -17,15 +19,28 @@ onMounted(() => {
   source.value = new URL(window.location.href)
 })
 
-async function copyURL () {
+async function copyURL (url) {
+  const body = new URLSearchParams({ url })
   const response = await fetch('https://s.zazuko.com/api/v1/shorten/', {
     method: 'POST',
-    body: new URLSearchParams({
-      url: window.location.href
-    })
+    body
   })
-  source.value = await response.text()
+  const res = await response
+  if (res.status<200 || res.status >= 300) {
+    source.value = url
+  } else {
+    source.value = await response.text()
+  }
+
   await copy()
+}
+
+defineExpose({
+  copyURL,
+})
+
+function prepareParams() {
+  emit('prepareParams')
 }
 
 </script>
@@ -33,7 +48,7 @@ async function copyURL () {
 <template>
 
   <Popover class="relative">
-    <PopoverButton class="button" title="Share" @click='copyURL()'>
+    <PopoverButton class="button" title="Share" @click='prepareParams'>
       <share-icon class="w-5 h-5"/>
     </PopoverButton>
     <span v-if='!copied'>Copy</span>

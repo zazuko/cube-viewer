@@ -8,7 +8,6 @@ import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
 import CubeSelector from './CubeSelector.vue'
 
 import SelectBox from './SelectBox.vue'
-import ShareUrlButton from './ShareUrlButton.vue'
 import ViewSelector from './ViewSelector.vue'
 
 const entityTypes = ['cubes', 'views']
@@ -100,25 +99,6 @@ function clearInput (value) {
   emit('setViewInput', {})
 }
 
-const isShareable = computed(()=>{
-
-  if (!props.source) {
-    return false
-  }
-
-  if (!(props.viewInput)) {
-    return false
-  }
-
-  const {
-    cubeUri,
-    viewUri,
-    dataset
-  } = props.viewInput
-  return cubeUri || viewUri || dataset
-})
-
-
 </script>
 
 <template>
@@ -198,9 +178,6 @@ const isShareable = computed(()=>{
         </button>
       </template>
     </div>
-
-
-    <share-url-button v-if="isShareable"/>
 
   </div>
 </template>

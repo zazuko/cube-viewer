@@ -54,18 +54,13 @@ function updateViewProjection ({
   } = projection
   const limit = pageSize
   const offset = (page - 1) * pageSize
-
-  function getOrderBy (sortDimension, sortDirection) {
-    if (!sortDimension) {
+  function getOrderBy (cubeDimension, sortDirection) {
+    if (!cubeDimension) {
       return null
     }
-    // The following comment was 'inherited', I don't know yet what it means.
-    //
-    // Passing `path` because there's a bug in the library that doesn't
-    // handle dimension comparison properly
-    const orderDimension = view.dimension({ cubeDimension: sortDimension.path })
+    const orderDimension = view.dimension({ cubeDimension })
     if (!orderDimension) {
-      throw Error('No dimension found for ', sortDimension.path)
+      throw Error('No dimension found for ', cubeDimension.path)
     }
     return [
       {
@@ -74,7 +69,11 @@ function updateViewProjection ({
       }]
   }
   const orderBy = getOrderBy(sortDimension,sortDirection)
-  view.updateProjection({ offset, limit, orderBy: orderBy })
+  view.updateProjection({
+    offset,
+    limit,
+    orderBy: orderBy
+  })
   return view
 }
 

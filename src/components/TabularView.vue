@@ -3,9 +3,9 @@
 /* eslint-disable */
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
-import { LookupSource, Source, View } from 'rdf-cube-view-query'
+import { LookupSource, View } from 'rdf-cube-view-query'
 import rdf from 'rdf-ext'
-import { computed, defineComponent, defineEmits, defineProps, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import { getBoundedViewPointer } from './common/debug.js'
@@ -59,6 +59,7 @@ const updateObservations = async () => {
     view: v,
     filters: filters.value
   })
+
   await fetchObservations(v)
   currentView.value = v
   debugCounter.value = debugCounter.value + 1
@@ -67,6 +68,7 @@ const updateObservations = async () => {
 const observations = ref(Remote.loading())
 const observationCount = ref(Remote.loading())
 const fetchObservations = async (view) => {
+  console.log('fetch observations')
   observations.value = Remote.loading()
   if (!view) return
   await queryQueue.add(async () => {
@@ -187,7 +189,7 @@ function updatePageSize (pageSizeArg) {
   updateObservations()
 }
 
-function updateSort (dimension, direction) {
+function updateSort (dimension,direction) {
   sortDimension.value = dimension
   sortDirection.value = direction
   updateObservations()
