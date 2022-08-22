@@ -71,9 +71,15 @@ function inputParameterIsValid () {
   return source.value && (viewInput.value.viewUri || viewInput.value.cubeUri || viewInput.value.dataset)
 }
 
+function updateSource(source){
+  params.endpointUrl = source.endpoint
+  params.user = source.user
+  console.log('updateSource',source)
+}
+
 // 'Hard' updates. Forces loading of labels.
 function setViewInput (value) {
-  console.log('setViewInput',value)
+  // console.log('setViewInput',value)
   setURLParams(value)
   viewInput.value = value
 }
@@ -103,6 +109,7 @@ function setURLParams (value) {
         v-model:source="source"
         v-model:language="language"
         @setViewInput="setViewInput"
+        @update:source="updateSource"
       />
       <viewer
         v-if="inputParameterIsValid()"
