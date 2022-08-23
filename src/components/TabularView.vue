@@ -192,11 +192,13 @@ function updatePageSize (pageSizeArg) {
 function updateSort (dimension,direction) {
   sortDimension.value = dimension
   sortDirection.value = direction
+  page.value = 1
   updateObservations()
 }
 
 function updateDimensionFilters (cubeDimensionArg, filtersArg) {
   filters.value.set(cubeDimensionArg.path.value, filtersArg)
+  page.value = 1
   updateObservations()
 }
 
@@ -205,6 +207,7 @@ function removeFilter ({
   index,
 }) {
   filters.value.get(dimensionPath).splice(index, 1)
+  page.value = 1
   updateObservations()
 }
 
