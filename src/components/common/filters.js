@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { Filter } from 'rdf-cube-view-query/index.js'
+import rdf from 'rdf-ext'
 
 function toTerm (obj) {
 
@@ -28,8 +29,9 @@ function filtersToView ({
       operation,
       arg
     } of dimensionFilters) {
-      // const operationTerm = operation.term ? operation.term : operation
-      const viewDimension = view.dimension({ cubeDimension: dimensionPath })
+
+      const viewDimension = view.dimension({ cubeDimension: { path: rdf.namedNode(dimensionPath) } })
+
       view.addFilter(new Filter({
         dimension: viewDimension,
         operation: toTerm(operation),
