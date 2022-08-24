@@ -46,13 +46,14 @@ const {
   execute,
   error
 } = useAsyncState(
-  (args) => {
+  async (args) => {
     return fetchView(args)
   },
   {},
   {
     delay: DELAY,
-    resetOnExecute: false
+    resetOnExecute: false,
+    immediate: false
   }
 )
 
@@ -73,20 +74,32 @@ async function fetchView ({
   source,
   viewInput,
 }) {
-  const {cubeUri, viewUri, dataset} = viewInput
+  const {
+    cubeUri,
+    viewUri,
+    dataset
+  } = viewInput
+
+  if (!(cubeUri || viewUri || dataset)) {
+    throw Error(`No cubeUri, viewUri or dataset`)
+  }
   if (cubeUri) {
-    return await viewFromCubeUri({ source, cubeUri })
+    return await viewFromCubeUri({
+      source,
+      cubeUri
+    })
   } else if (viewUri) {
-    return await viewFromViewUri({source, viewUri})
+    return await viewFromViewUri({
+      source,
+      viewUri
+    })
   } else if (dataset) {
     return await viewFromDataset({
       dataset,
       fallbackSource: source
     })
-  } else {
-    throw Error(`No cubeUri, viewUri or dataset`)
   }
-}
+  }
 
 const title = computed(() => {
   if (!view.value) {
@@ -117,16 +130,16 @@ const params = useUrlSearchParams('history')
 
 function prepareParams(){
   console.log('Prepare params')
-  params.viewUri = undefined
-  params.cubeUri = undefined
   if (tabularView.value){
     const currentView = tabularView.value.currentView
     const dataset = getBoundedViewPointer(currentView).dataset
-    console.log('dataset',dataset.toString())
-    params.view = dataset.toString()
-    shareButton.value.copyURL(window.location.href)
+    const datasetN3 = dataset.toString()
+    const url = new URL(window.location.href);
+    url.searchParams.set("view",datasetN3);
+    url.searchParams.delete("cubeUri")
+    url.searchParams.delete("viewUri")
+    shareButton.value.copyURL(url)
   }
-
 }
 
 </script>
@@ -137,8 +150,8 @@ function prepareParams(){
       <loading-icon/>
     </div>
 
-    <div v-if="errorMessage" class="text-red-500">
-      {{ errorMessage }}
+    <div v-if="error" class="text-red-500">
+      {{ error }}
     </div>
 
     <div class="flex flex-col gap-4" v-if="isReady">

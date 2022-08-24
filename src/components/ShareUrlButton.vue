@@ -31,8 +31,7 @@ async function copyURL (url) {
   } else {
     source.value = await response.text()
   }
-
-  await copy()
+  await copy(source.value)
 }
 
 defineExpose({
