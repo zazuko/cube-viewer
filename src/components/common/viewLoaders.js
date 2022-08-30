@@ -35,7 +35,7 @@ async function viewFromDataset ({
     view.source = fallbackSource
   }
   await view.fetchCubesShapes()
-  return view
+  return applyDefaults({ view })
 }
 
 function applyDefaults ({ view }) {
