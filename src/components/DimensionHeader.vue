@@ -22,7 +22,6 @@
           <dimension-filters
             :dimension="dimension"
             :filters="filters"
-            :labels="labels"
             :language="language"
             :base="base"
             @update:filters="$emit('update:filters', dimension, $event)"
@@ -45,6 +44,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 import { defineComponent } from 'vue'
 import { CubeDimension } from 'rdf-cube-view-query'
 import { Term } from '@rdfjs/data-model'
@@ -85,10 +85,6 @@ export default defineComponent({
     language: {
       type: [Array, String],
       required: true,
-    },
-    labels: {
-      type: Object,
-      required: false,
     },
     sortDimension: {
       type: CubeDimension,

@@ -6,7 +6,6 @@
         :key="index"
         :dimension="dimension"
         :language="language"
-        :labels="labels"
         :base="base"
         v-model:filter="filter.value"
       />
@@ -42,10 +41,6 @@ export default defineComponent({
     filters: {
       type: Array,
       required: true,
-    },
-    labels: {
-      type: Object,
-      required: false,
     },
     language: {
       type: [String, Array],

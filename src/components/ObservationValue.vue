@@ -33,10 +33,6 @@ export default defineComponent({
       type: Object,
       required: true,
     },
-    labels: {
-      type: Object,
-      required: false,
-    },
     language: {
       type: [String, Array],
       required: false,
@@ -56,8 +52,8 @@ export default defineComponent({
 
     resourceLabel () {
       return (
-        this.labels?.node(this.value).out(ns.schema.name, { language: this.language }).term ||
         this.pointer.node(this.value).out(ns.schema.name, { language: this.language }).term ||
+        this.pointer.node(this.value).out(ns.rdfs.label, { language: this.language }).term ||
         this.value
       )
     },

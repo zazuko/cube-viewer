@@ -60,10 +60,6 @@ export default defineComponent({
       type: Object,
       required: true,
     },
-    labels: {
-      type: Object,
-      required: false,
-    },
     language: {
       type: [String, Array],
       required: false,
@@ -89,7 +85,7 @@ export default defineComponent({
 
     resourceLabel (term) {
       return (
-        this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
+        // this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
         this.dimension.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
         term
       )

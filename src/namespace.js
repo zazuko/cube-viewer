@@ -11,6 +11,7 @@ export const schema = RDF.namespace(prefixes.schema)
 export const sh = RDF.namespace(prefixes.sh)
 export const time = RDF.namespace(prefixes.time)
 export const view = RDF.namespace('https://cube.link/view/')
+export const rdfs = RDF.namespace('http://www.w3.org/2000/01/rdf-schema#')
 
 export function expand (uri) {
   if (uri && !uri.includes(':')) return uri

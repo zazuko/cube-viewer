@@ -3,9 +3,8 @@
 /* eslint-disable */
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
-import { LookupSource, View } from 'rdf-cube-view-query'
 import rdf from 'rdf-ext'
-import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, toRefs, watch } from 'vue'
+import { getCurrentInstance, computed, defineEmits, defineProps, inject, onMounted, ref, shallowRef, watch, triggerRef } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import { getBoundedViewPointer } from './common/debug.js'
@@ -22,13 +21,10 @@ const emit = defineEmits(['updateDataset'])
 const props = defineProps({
   view: {
     type: Object,
-    required: true,
-  },
-  language: {
-    type: [String, Array],
-    required: true,
-  },
+    required: true
+  }
 })
+const language = inject('language')
 
 const currentView = shallowRef()
 const debugOpen = ref(false)
@@ -61,8 +57,36 @@ const updateObservations = async () => {
   })
 
   await fetchObservations(v)
+  await fetchLabels(v)
   currentView.value = v
-  debugCounter.value = debugCounter.value + 1
+  refreshObservations()
+}
+
+async function fetchLabels (view) {
+  const pointer = view.ptr
+  const terms = rdf.termSet()
+  for (const row of observations.value.data) {
+    for (const [, value] of Object.entries(row)) {
+      if (value.termType === 'NamedNode') {
+        if (!pointer.node(value).out(ns.schema.name).value) {
+          terms.add(value)
+        }
+      }
+    }
+  }
+  const source = props.view.getMainSource()
+  const uris = [...terms].map(x => `<${x.value}> `).join(', ')
+
+  console.log(`Fetching labels for ${terms.size} entities`)
+  const result = await source.client.query.construct(`
+CONSTRUCT {
+      ?uri <http://schema.org/name> ?label .
+    } where {
+      ?uri <http://schema.org/name> ?label
+      FILTER (?uri IN (${uris}))
+}`)
+  view.dataset.addAll(result)
+  console.log('done')
 }
 
 const observations = ref(Remote.loading())
@@ -85,27 +109,6 @@ const fetchObservations = async (view) => {
   })
 }
 
-
-// Labels are stored as Record<dimensionURI, Clownface>
-const labels = ref({})
-const fetchLabels = async (view) => {
-  if (!view || !view) return
-
-  const dimensions = view.dimensions
-
-  const dimensionsWithLabels = await Promise.all(dimensions.map(dimension => {
-    return queryQueue.add(async () => fetchDimensionLabels(dimension, view))
-  }))
-
-  return dimensionsWithLabels.filter(notNull => notNull).reduce(
-    (acc, [dimensionPath, dimensionLabels]) => ({
-      ...acc,
-      [dimensionPath.value]: dimensionLabels
-    }),
-    {}
-  )
-}
-
 function initProjection (view) {
   // Get all the controls from the view
   const projection = projectionFromView(view)
@@ -121,28 +124,30 @@ function initFilters (view) {
   cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
 }
 
-function initView (view) {
-  initProjection(view)
-  initFilters(view)
-  fetchObservations(view)
-  fetchLabels(view)
-
-  currentView.value = view
+function refreshObservations(){
+  // Dirty hack
+  // It's to update the observations component and show the labels when they arrive
   debugCounter.value = debugCounter.value + 1
 }
 
+async function initView (view) {
+  initProjection(view)
+  initFilters(view)
+  await fetchObservations(view)
+  await fetchLabels(view)
+  currentView.value = view
+  refreshObservations()
+}
 
-onMounted(()=>{
+onMounted(async () => {
   const cubeTerm = props.view.dimensions[0].cubes[0]
   cubePointer.value = props.view.ptr.node(cubeTerm)
-  initView(props.view)
+  await initView(props.view)
 })
 
 watch(() => props.view, () => initView(props.view))
 
-
 const filtersSummary = computed(() => {
-  const language = props.language
   const ptr = props.view.ptr
   const cube = props.view.cubes()[0]
   return [...filters.value.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
@@ -151,12 +156,13 @@ const filtersSummary = computed(() => {
       operation,
       arg,
     }, index) => {
-      const dimensionLabel = dimension.out(ns.schema.name, { language }).value
+      const dimensionLabel = dimension.out(ns.schema.name, { language: language.value }).value
       // const dimensionLabel = ptr.node(dimension).out(ns.schema.name, { language }).value
-      const dimensionValueLabels = labels.value[dimension.path.value]
+      // const dimensionValueLabels = labels.value[dimension.path.value]
       const valueLabel = (
-        dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
-        ptr.node(arg).out(ns.schema.name, { language }).value ||
+        // dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
+        ptr.node(arg).out(ns.schema.name, { language: language.value }).value ||
+        ptr.node(arg).out(ns.rdfs.label, { language: language.value }).value ||
         ns.shrink(arg.value, cube.value)
       )
       return {
@@ -211,36 +217,6 @@ function removeFilter ({
   updateObservations()
 }
 
-const fetchDimensionLabels = async (dimension, cubeSource) => {
-  const cubeDimension = dimension.cubeDimensions[0]
-  if (!cubeDimension) return undefined
-  const path = cubeDimension.path
-
-  const dimensionLabels = rdf.clownface({ dataset: rdf.dataset() })
-
-  if (ns.sh.IRI.equals(cubeDimension.out(ns.sh.nodeKind).term)) {
-    const view = new View({ parent: cubeSource })
-
-    const source = LookupSource.fromSource(dimension.source)
-
-    view.addDimension(dimension)
-    view.addDimension(view.createDimension({
-      source,
-      path: ns.schema.name,
-      join: dimension,
-      as: ns.schema.name,
-    }))
-
-    const data = await view.observations()
-    for (const row of data) {
-      const term = row[path.value]
-      const label = row[ns.schema.name.value]
-      dimensionLabels.node(term).addOut(ns.schema.name, label)
-    }
-  }
-  return [path, dimensionLabels]
-}
-
 defineExpose({
   currentView,
 })
@@ -251,6 +227,7 @@ defineExpose({
 
   <div>
     <template v-if="cubeDimensions">
+
       <!-- h-1 is a hack to make the header cells layout work -->
       <table class="h-1">
         <thead>
@@ -261,7 +238,6 @@ defineExpose({
               :base="cubePointer.term.value"
               :dimension="dimension"
               :language="language"
-              :labels="labels[dimension.path.value]"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
               :filters="filters.get(dimension.path.value)"
@@ -298,7 +274,7 @@ defineExpose({
           </td>
         </tr>
         </tbody>
-        <tbody v-else>
+        <tbody v-else :key="`${debugCounter}/observations`">
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
             v-for="dimension in cubeDimensions"
@@ -312,7 +288,6 @@ defineExpose({
             <observation-value
               :value="observation[dimension.path.value]"
               :pointer="cubePointer"
-              :labels="labels[dimension.path.value]"
               :language="language"
             />
           </td>
@@ -336,7 +311,7 @@ defineExpose({
         <span class="text-gray-500 py-3">toggle debug</span>
       </button>
       <DebugBox
-        :key="debugCounter"
+        :key="`${debugCounter}/debug`"
         v-if="debugOpen===true"
         :debugView="currentView"
         @updateDataset="updateDataset"
