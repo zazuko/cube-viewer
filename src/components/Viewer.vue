@@ -1,16 +1,14 @@
 <script setup>
 /* eslint-disable */
-import { InformationCircleIcon } from '@heroicons/vue/outline'
 import { useAsyncState, useUrlSearchParams } from '@vueuse/core'
 import { Source } from 'rdf-cube-view-query'
-import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
-import * as ns from '../namespace'
+import { defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import { getBoundedViewPointer } from './common/debug.js'
 import { viewFromCubeUri, viewFromDataset, viewFromViewUri } from './common/viewLoaders.js'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ShareUrlButton from './ShareUrlButton.vue'
+import MetadataHeader from './MetadataHeader.vue'
 
-import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 import TabularView from './TabularView.vue'
 
 const DELAY = 0
@@ -21,15 +19,10 @@ const props = defineProps({
   },
   viewInput: {
     type: Object
-  },
-  language: {
-    type: [String, Array],
-    required: false
   }
 })
 
 const emit = defineEmits(['setViewInput'])
-
 const view = shallowRef(null)
 
 onMounted(async () => {
@@ -56,8 +49,6 @@ const {
     immediate: false
   }
 )
-
-const isMetadataOpen = ref(false)
 
 async function initFromProps () {
   await execute(DELAY, {
@@ -101,32 +92,9 @@ async function fetchView ({
   }
   }
 
-const title = computed(() => {
-  if (!view.value) {
-    return null
-  }
-  const title = view.value.ptr.out(ns.schema.name, { language: props.language }).value
-  return title ?? null
-})
-
-const description = computed(() => {
-  if (!view.value) {
-    return null
-  }
-  const description = view.value.ptr.out(ns.schema.description, { language: props.language }).value
-  return description ?? null
-})
-
-const errorMessage = computed(() => {
-  if (error && ! isLoading) {
-    return error
-  }
-  return undefined
-})
-
 const tabularView = ref()
-const shareButton = ref()
 const params = useUrlSearchParams('history')
+const shareButton = ref()
 
 function prepareParams(){
   console.log('Prepare params')
@@ -155,42 +123,21 @@ function prepareParams(){
     </div>
 
     <div class="flex flex-col gap-4" v-if="isReady">
-
       <header v-if="state">
-
-        <div class="flex flex-row">
-          <h1 class="font-bold mb-2 grow" :title="state.term.value">
-            <span v-if="title">{{ title }}</span>
-            <span v-else class="text-gray-500">Untitled</span>
-          </h1>
-          <share-url-button
-            ref="shareButton"
-            class="items-end"
-            @prepareParams="prepareParams"
-          />
-        </div>
-        <section v-if="description" class="text-sm text-gray-700">
-          {{ description }}
-        </section>
-        <div>
-          <button @click="isMetadataOpen = true" title="Metadata">
-            <information-circle-icon class="text-gray-500 w-5 h-5"/>
-          </button>
-          <resource-details-dialog
-            title="Metadata"
-            :pointer="state.ptr"
-            :is-open="isMetadataOpen"
-            @close="isMetadataOpen = false"
-          />
-        </div>
-
+        <template v-for="cube in state.cubes()">
+          <MetadataHeader :pointer="state.ptr.node(cube)"></MetadataHeader>
+        </template>
+        <share-url-button
+          ref="shareButton"
+          class="items-end"
+          @prepareParams="prepareParams"
+        />
       </header>
       <tabular-view
         ref="tabularView"
         @updateDataset="updateDataset"
         v-if="state"
-        :view="state"
-        :language="language"/>
+        :view="state"/>
     </div>
   </div>
 </template>
