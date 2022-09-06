@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
   <div class="flex items-center gap-8">
     <div class="flex items-center gap-1">
@@ -16,11 +17,10 @@
         <exclamation-circle-icon class="w-5 h-5" />
       </span>
       <span v-else>{{ pagesCount }}</span>
-
-      <button @click="updatePage(page + 1)" title="Next page" class="button px-2">
+      <button @click="updatePage(page + 1)" title="Next page" class="button px-2" :disabled="!pagesCount || page >= pagesCount">
         <chevron-right-icon class="w-6 h-6" />
       </button>
-      <button @click="updatePage(pagesCount)" title="Last page" class="button px-2" :disabled="!pagesCount || page === pagesCount">
+      <button @click="updatePage(pagesCount)" title="Last page" class="button px-2" :disabled="!pagesCount || page >= pagesCount">
         <chevron-double-right-icon class="w-6 h-6" />
       </button>
     </div>
