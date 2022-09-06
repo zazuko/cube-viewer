@@ -1,6 +1,37 @@
 /* eslint-disable */
 import { Filter } from 'rdf-cube-view-query/index.js'
-import rdf from 'rdf-ext'
+import * as ns from '../../namespace.js'
+
+const operations = [
+  {
+    term: ns.view.Eq,
+    label: '='
+  },
+  {
+    term: ns.view.Ne,
+    label: '!='
+  },
+  {
+    term: ns.view.In,
+    label: 'in'
+  },
+  {
+    term: ns.view.Lt,
+    label: '<'
+  },
+  {
+    term: ns.view.Lte,
+    label: '<='
+  },
+  {
+    term: ns.view.Gt,
+    label: '>'
+  },
+  {
+    term: ns.view.Gte,
+    label: '>='
+  }
+]
 
 function toTerm (obj) {
 
@@ -22,50 +53,46 @@ function filtersToView ({
   // I need to know how the API is supposed to work
   view.clearFilters()
 
-  // @TODO this should be referenced not by the path, but by the cube,
-  // since there can be more than one cube for a path
-  for (const [dimensionPath, dimensionFilters] of filters.entries()) {
-    for (const {
-      operation,
+  for (const {
+    dimension,
+    operation,
+    arg
+  } of filters) {
+    const viewDimension = view.dimension({ cubeDimension: { path: dimension.path } })
+    view.addFilter(new Filter({
+      dimension: viewDimension,
+      operation: toTerm(operation),
       arg
-    } of dimensionFilters) {
-
-      const viewDimension = view.dimension({ cubeDimension: { path: rdf.namedNode(dimensionPath) } })
-
-      view.addFilter(new Filter({
-        dimension: viewDimension,
-        operation: toTerm(operation),
-        arg
-      }))
-    }
+    }))
   }
   return view
 }
 
+function getOperation (term) {
+  for (const current of operations) {
+    if (current.term.equals(term)) {
+      return current
+    }
+  }
+}
+
 function filtersFromView (view) {
   // Get the filters in the form of records Path->Set:Filter
-  // @TODO use View Dimensions directly instead of CubeDimensions
-  const filters = new Map()
+  const filters = []
   const viewDimensionCubePath = {}
-
   for (const dimension of view.dimensions) {
     const cubeDimension = dimension.cubeDimensions[0]
     if (cubeDimension) {
       viewDimensionCubePath[dimension.term.value] = cubeDimension.path.value
-      filters.set(cubeDimension.path.value, [])
     } else {
       console.log('No cube dimension for !', dimension.term)
     }
   }
-
   for (const filter of view.filters) {
-    const path = viewDimensionCubePath[filter.dimension.value]
     const viewDimension = view.dimensions.find(dimension => dimension.term.equals(filter.dimension))
-
-    // This is the way the filter Vue component likes it.
-    filters.get(path).push({
+    filters.push({
       dimension: viewDimension.cubeDimensions[0],
-      operation: toTerm(filter.operation),
+      operation: getOperation(filter.operation), // @TODO use the term and use the langStore
       arg: filter.arg
     })
   }
@@ -73,4 +100,4 @@ function filtersFromView (view) {
   return filters
 }
 
-export { filtersToView, filtersFromView }
+export { filtersToView, filtersFromView, operations }

@@ -52,8 +52,14 @@ function updateViewProjection ({
     sortDimension,
     sortDirection
   } = projection
+
+  if (!view) {
+    return view
+  }
+
   const limit = pageSize
   const offset = (page - 1) * pageSize
+
   function getOrderBy (cubeDimension, sortDirection) {
     if (!cubeDimension) {
       return null

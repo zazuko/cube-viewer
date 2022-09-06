@@ -1,8 +1,9 @@
 <script setup>
 /* eslint-disable */
-import { computed, defineProps, inject, ref } from 'vue'
-import * as ns from '../namespace.js'
 import { InformationCircleIcon } from '@heroicons/vue/outline'
+import { computed, defineProps, ref } from 'vue'
+import * as ns from '../namespace.js'
+import useLangStore from '../stores/langStore.js'
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 
 const props = defineProps({
@@ -12,14 +13,14 @@ const props = defineProps({
   }
 })
 
-const language = inject('language')
+const langStore = useLangStore()
 const isMetadataOpen = ref(false)
 
 const description = computed(() => {
   if (!props.pointer) {
     return null
   }
-  const description = props.pointer.out(ns.schema.description, { language: language.value }).value
+  const description = props.pointer.out(ns.schema.description, { language: langStore.language }).value
   return description ?? null
 })
 
@@ -27,7 +28,7 @@ const title = computed(() => {
   if (!props.pointer) {
     return null
   }
-  const title = props.pointer.out(ns.schema.name, { language: language.value }).value
+  const title = props.pointer.out(ns.schema.name, { language: langStore.language }).value
   return title ?? null
 })
 

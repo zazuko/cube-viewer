@@ -1,3 +1,47 @@
+<script setup>
+/* eslint-disable */
+import { CubeDimension } from 'rdf-cube-view-query'
+import { defineEmits, defineProps } from 'vue'
+import useLangStore from '../stores/langStore.js'
+import { operations } from './common/filters.js'
+import SelectBox from './SelectBox.vue'
+import TermDisplay from './TermDisplay.vue'
+import TermInput from './TermInput.vue'
+
+const emit = defineEmits(['update:filter'])
+
+const props = defineProps({
+  dimension: {
+    type: CubeDimension,
+    required: true
+  },
+  filter: {
+    type: Object,
+    required: true
+  }
+})
+
+const langStore = useLangStore()
+const {
+  getDisplayTerm
+} = langStore
+
+function updateOperation (operation) {
+  emit('update:filter', {
+    ...props.filter,
+    operation
+  })
+}
+
+function updateArg (arg) {
+  emit('update:filter', {
+    ...props.filter,
+    arg
+  })
+}
+
+</script>
+
 <template>
   <fieldset class="flex items-center gap-2">
     <SelectBox :modelValue="filter.operation" @update:modelValue="updateOperation" :options="operations">
@@ -6,13 +50,14 @@
         <span v-else class="text-gray-500">Operation</span>
       </template>
     </SelectBox>
-    <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
+    <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg"
+               :options="dimension.in">
       <template v-slot:button="{ selected }">
-        <term-display v-if="selected" :term="resourceLabel(selected)" :base="base" />
+        <term-display v-if="selected" :term="getDisplayTerm(selected)"/>
         <span v-else class="text-gray-500">Value</span>
       </template>
       <template v-slot:option="{ option }">
-        <term-display :term="resourceLabel(option)" :base="base" />
+        <term-display :term="getDisplayTerm(option)"/>
       </template>
     </SelectBox>
     <div v-else>
@@ -25,71 +70,3 @@
     </div>
   </fieldset>
 </template>
-
-<script>
-import { defineComponent } from 'vue'
-import { CubeDimension } from 'rdf-cube-view-query'
-import SelectBox from './SelectBox.vue'
-import TermDisplay from './TermDisplay.vue'
-import TermInput from './TermInput.vue'
-import * as ns from '../namespace'
-
-const operations = [
-  { term: ns.view.Eq, label: '=' },
-  { term: ns.view.Ne, label: '!=' },
-  { term: ns.view.In, label: 'in' },
-  { term: ns.view.Lt, label: '<' },
-  { term: ns.view.Lte, label: '<=' },
-  { term: ns.view.Gt, label: '>' },
-  { term: ns.view.Gte, label: '>=' },
-]
-
-export default defineComponent({
-  name: 'DimensionFilters',
-  components: { SelectBox, TermDisplay, TermInput },
-  props: {
-    dimension: {
-      type: CubeDimension,
-      required: true,
-    },
-    base: {
-      type: String,
-      required: true,
-    },
-    filter: {
-      type: Object,
-      required: true,
-    },
-    language: {
-      type: [String, Array],
-      required: false,
-    },
-  },
-  emits: ['update:filter'],
-
-  computed: {
-    operations () {
-      // TODO: Filter based on dimension
-      return operations
-    },
-  },
-
-  methods: {
-    updateOperation (operation) {
-      this.$emit('update:filter', { ...this.filter, operation })
-    },
-
-    updateArg (arg) {
-      this.$emit('update:filter', { ...this.filter, arg })
-    },
-
-    resourceLabel (term) {
-      return (
-        // this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
-        this.dimension.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
-        term
-      )
-    },
-  },
-})
-</script>

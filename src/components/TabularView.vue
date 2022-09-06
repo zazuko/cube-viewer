@@ -2,11 +2,14 @@
 <script setup>
 /* eslint-disable */
 import { XCircleIcon } from '@heroicons/vue/outline'
+import { storeToRefs } from 'pinia'
 import queue from 'promise-the-world/queue.js'
 import rdf from 'rdf-ext'
-import { computed, defineEmits, defineProps, inject, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
+import useFilterStore from '../stores/filterStore.js'
+import useLangStore from '../stores/langStore.js'
 import { getBoundedViewPointer } from './common/debug.js'
 import { filtersFromView, filtersToView } from './common/filters.js'
 import { projectionFromView, updateViewProjection } from './common/projection.js'
@@ -24,72 +27,56 @@ const props = defineProps({
     required: true
   }
 })
-const language = inject('language')
 
 const currentView = shallowRef()
-const debugOpen = ref(false)
-const debugCounter = ref(1)
-
-const cubePointer = ref()
-const filters = ref()
 const page = ref()
 const pageSize = ref()
 const sortDimension = shallowRef()
 const sortDirection = shallowRef()
+
+const debugOpen = ref(false)
+const debugCounter = ref(1)
+
 const queryQueue = queue(1)
+
+const langStore = useLangStore()
+const {
+  setPointers
+} = langStore
+const {
+  language,
+  pointer
+} = storeToRefs(langStore)
+
+const filterStore = useFilterStore()
+const {
+  filters
+} = storeToRefs(filterStore)
 
 // Used when controls change
 const updateObservations = async () => {
-  let v = updateViewProjection({
-    view: currentView.value,
-    projection: {
-      page: page.value,
-      pageSize: pageSize.value,
-      sortDimension: sortDimension.value,
-      sortDirection: sortDirection.value,
-      filters: filters.value
-    }
-  })
-  v = filtersToView({
-    view: v,
-    filters: filters.value
-  })
-
-  await fetchObservations(v)
-  await fetchLabels(v)
-  currentView.value = v
-  refreshObservations()
-}
-
-async function fetchLabels (view) {
-  const pointer = view.ptr
-  const terms = rdf.termSet()
-  for (const row of observations.value.data) {
-    for (const [, value] of Object.entries(row)) {
-      if (value.termType === 'NamedNode') {
-        if (!pointer.node(value).out(ns.schema.name).value) {
-          terms.add(value)
-        }
+  if (currentView.value) {
+    let v = updateViewProjection({
+      view: currentView.value,
+      projection: {
+        page: page.value,
+        pageSize: pageSize.value,
+        sortDimension: sortDimension.value,
+        sortDirection: sortDirection.value,
+        filters: filters.value
       }
-    }
+    })
+    v = filtersToView({
+      view: v,
+      filters: filters.value
+    })
+    await fetchObservationsAndLabels(v)
   }
-  const source = props.view.getMainSource()
-  const uris = [...terms].map(x => `<${x.value}> `).join(', ')
-
-  console.log(`Fetching labels for ${terms.size} entities`)
-  const result = await source.client.query.construct(`
-CONSTRUCT {
-      ?uri <http://schema.org/name> ?label .
-    } where {
-      ?uri <http://schema.org/name> ?label
-      FILTER (?uri IN (${uris}))
-}`)
-  view.dataset.addAll(result)
-  console.log('done')
 }
 
 const observations = ref(Remote.loading())
 const observationCount = ref(Remote.loading())
+
 const fetchObservations = async (view) => {
   console.log('fetch observations')
   observations.value = Remote.loading()
@@ -117,82 +104,65 @@ function initProjection (view) {
   sortDirection.value = projection.sortDirection
 }
 
+function refreshObservations () {
+  // Dirty hack since the view it's a shallow ref
+  // It's to update the observations component and show the labels when they arrive
+  debugCounter.value = debugCounter.value + 1
+}
 
-function filterDuplicates(dimensions){
-  const set = rdf.termSet()
-  return dimensions.filter(x=>{
-    const result = !set.has(x.ptr.term)
-    set.add(x.ptr.term)
-    return result
+async function fetchLabels (view) {
+  const pointer = view.ptr
+  const terms = rdf.termSet()
+  for (const row of observations.value.data) {
+    for (const [, value] of Object.entries(row)) {
+      if (value.termType === 'NamedNode') {
+        if (!pointer.node(value).out(ns.schema.name).value) {
+          terms.add(value)
+        }
+      }
+    }
+  }
+  const source = props.view.getMainSource()
+  const uris = [...terms].map(x => `<${x.value}> `).join(', ')
+  await queryQueue.add(async () => {
+    console.log(`Fetching labels for ${terms.size} entities`)
+    const result = await source.client.query.construct(`
+CONSTRUCT {
+      ?uri <http://schema.org/name> ?label .
+    } where {
+      ?uri <http://schema.org/name> ?label
+      FILTER (?uri IN (${uris}))
+}`)
+    view.dataset.addAll(result)
+    currentView.value = view
+    refreshObservations()
+    console.log('fetch labels end')
   })
+}
+
+async function fetchObservationsAndLabels (view) {
+  await fetchObservations(view)
+  currentView.value = view
+  fetchLabels(view)
 }
 
 function initFilters (view) {
   // Load filters
   filters.value = filtersFromView(view)
-  const dimensions = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
-  cubeDimensions.value = filterDuplicates(dimensions)
-}
-
-function refreshObservations(){
-  // Dirty hack
-  // It's to update the observations component and show the labels when they arrive
-  debugCounter.value = debugCounter.value + 1
 }
 
 async function initView (view) {
+  setPointers(view)
   initProjection(view)
   initFilters(view)
-  await fetchObservations(view)
-  await fetchLabels(view)
-  currentView.value = view
-  refreshObservations()
+  await fetchObservationsAndLabels(view)
 }
 
-onMounted(async () => {
-  const cubeTerm = props.view.dimensions[0].cubes[0]
-  cubePointer.value = props.view.ptr.node(cubeTerm)
-  await initView(props.view)
-})
-
+onMounted(() => initView(props.view))
 watch(() => props.view, () => initView(props.view))
-
-const filtersSummary = computed(() => {
-  const ptr = props.view.ptr
-  const cube = props.view.cubes()[0]
-  return [...filters.value.entries()].flatMap(([dimensionPath, dimensionFilters]) =>
-    dimensionFilters.map(({
-      dimension,
-      operation,
-      arg,
-    }, index) => {
-      const dimensionLabel = dimension.out(ns.schema.name, { language: language.value }).value
-
-      const valueLabel = arg ? (
-        ptr.node(arg).out(ns.schema.name, { language: language.value }).value ||
-        ptr.node(arg).out(ns.rdfs.label, { language: language.value }).value ||
-        ns.shrink(arg.value, cube.value)
-      ) : 'Undefined'
-
-      return {
-        dimensionPath,
-        index,
-        label: `${dimensionLabel} ${operation.label} ${valueLabel}`
-      }
-    }))
-})
 
 function updateDataset (arg) {
   emit('updateDataset', arg)
-}
-
-function isNumericScale (dimension) {
-  const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
-  return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
-}
-
-function isMeasureDimension (dimension) {
-  return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
 }
 
 function updatePage (pageArg) {
@@ -205,35 +175,79 @@ function updatePageSize (pageSizeArg) {
   updateObservations()
 }
 
-function updateSort (dimension,direction) {
+function updateSort (dimension, direction) {
   sortDimension.value = dimension
   sortDirection.value = direction
   page.value = 1
   updateObservations()
 }
 
-function updateDimensionFilters (cubeDimensionArg, filtersArg) {
-  filters.value.set(cubeDimensionArg.path.value, filtersArg)
-  page.value = 1
-  updateObservations()
-}
+// Filters
+
+const filtersSummary = computed(() => {
+  return filters.value.map((currElement, index) => {
+    const {
+      dimension,
+      operation,
+      arg
+    } = currElement
+    const dimensionLabel = dimension.out(ns.schema.name, { language: langStore.language }).value
+    const valueLabel = langStore.getDisplayString(langStore.getDisplayTerm(arg))
+    return {
+      dimension: dimension.path,
+      index,
+      label: `${dimensionLabel} ${operation.label} ${valueLabel}`
+    }
+  })
+})
 
 function removeFilter ({
   dimensionPath,
-  index,
+  index
 }) {
-  filters.value.get(dimensionPath).splice(index, 1)
+  filters.value.splice(index, 1)
   page.value = 1
   updateObservations()
 }
 
-const cubeDimensions = ref()
+function updateFilters(){
+  page.value = 1
+  updateObservations()
+}
 
+// Computed and helpers
+function isNumericScale (dimension) {
+  const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
+  return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
+}
 
-defineExpose({
-  currentView,
+function isMeasureDimension (dimension) {
+  return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
+}
+
+function filterDuplicates (dimensions) {
+  const set = rdf.termSet()
+  return dimensions.filter(x => {
+    const result = !set.has(x.ptr.term)
+    set.add(x.ptr.term)
+    return result
+  })
+}
+
+const cubeDimensions = computed(() => {
+  if (!currentView.value) {
+    return undefined
+  }
+  const dimensions = currentView.value.dimensions.map(dimension => dimension.cubeDimensions[0])
+    .filter(notNull => notNull)
+  return filterDuplicates(dimensions)
 })
 
+// Expose
+
+defineExpose({
+  currentView
+})
 
 </script>
 
@@ -249,14 +263,12 @@ defineExpose({
           <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
               class="border border-b-2 align-top text-left h-full">
             <dimension-header
-              :base="cubePointer.term.value"
               :dimension="dimension"
               :language="language"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
-              :filters="filters.get(dimension.path.value)"
               @updateSort="updateSort"
-              @update:filters="updateDimensionFilters"
+              @updateFilters="updateFilters"
             />
           </th>
         </tr>
@@ -301,7 +313,7 @@ defineExpose({
           >
             <observation-value
               :value="observation[dimension.path.value]"
-              :pointer="cubePointer"
+              :pointer="pointer"
               :language="language"
             />
           </td>

@@ -3,8 +3,10 @@
 import { XCircleIcon } from '@heroicons/vue/outline'
 import { CogIcon } from '@heroicons/vue/solid'
 import { useUrlSearchParams } from '@vueuse/core'
+import { storeToRefs } from 'pinia'
 import { Source } from 'rdf-cube-view-query'
 import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
+import useLangStore from '../stores/langStore.js'
 import CubeSelector from './CubeSelector.vue'
 
 import SelectBox from './SelectBox.vue'
@@ -23,14 +25,10 @@ const props = defineProps({
   viewInput: {
     type: Object,
     required: false
-  },
-  language: {
-    type: [Array, String],
-    required: false
   }
 })
 
-const emit = defineEmits(['update:language', 'update:source', 'setViewInput'])
+const emit = defineEmits(['update:source', 'setViewInput'])
 
 const open = ref()
 const options = ref()
@@ -65,9 +63,14 @@ const entityType = computed(() => {
   }
 })
 
+const langStore = useLangStore()
+const {
+  language,
+  pointer
+} = storeToRefs(langStore)
+
 function updateLanguage (language) {
-  const languageList = [language, ...languages, '*']
-  emit('update:language', languageList)
+  language.value = [language, ...languages, '*']
 }
 
 function isValid () {

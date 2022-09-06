@@ -4,16 +4,12 @@ import { useUrlSearchParams } from '@vueuse/core'
 import { Parser } from 'n3'
 import { Source } from 'rdf-cube-view-query'
 import rdf from 'rdf-ext'
-import { onMounted, ref, provide } from 'vue'
+import { onMounted, ref } from 'vue'
 import SourceConfig from './components/SourceConfig.vue'
 import Viewer from './components/Viewer.vue'
 
 const parser = new Parser()
-
-const defaultLanguage = ['en', '*']
 const params = useUrlSearchParams('history')
-const language = ref(defaultLanguage)
-provide('language', language)
 
 const source = ref(null)
 const viewInput = ref()
@@ -106,7 +102,6 @@ function setURLParams (value) {
         v-if="viewInput"
         :viewInput="viewInput"
         v-model:source="source"
-        v-model:language="language"
         @setViewInput="setViewInput"
         @update:source="updateSource"
       />
