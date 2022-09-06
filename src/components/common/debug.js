@@ -1,4 +1,6 @@
+/* eslint-disable */
 import rdf from 'rdf-ext'
+import { view } from '../../namespace.js'
 
 function getBoundedViewPointer (view) {
   const { term, dataset } = getBoundedDescription({
@@ -15,8 +17,8 @@ function getBoundedDescription ({
   const descriptionWithBlankNodes = rdf.traverser(({
     dataset,
     level,
-    quad,
-  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 20))
+    quad
+  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 20) || (quad.subject.value.startsWith(view.value) && level < 20))
   const result = rdf.dataset()
   result.addAll(descriptionWithBlankNodes.match({
     term,
