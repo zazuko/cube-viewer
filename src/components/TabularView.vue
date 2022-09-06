@@ -4,7 +4,7 @@
 import { XCircleIcon } from '@heroicons/vue/outline'
 import queue from 'promise-the-world/queue.js'
 import rdf from 'rdf-ext'
-import { getCurrentInstance, computed, defineEmits, defineProps, inject, onMounted, ref, shallowRef, watch, triggerRef } from 'vue'
+import { computed, defineEmits, defineProps, inject, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import { getBoundedViewPointer } from './common/debug.js'
@@ -36,7 +36,6 @@ const page = ref()
 const pageSize = ref()
 const sortDimension = shallowRef()
 const sortDirection = shallowRef()
-const cubeDimensions = ref()
 const queryQueue = queue(1)
 
 // Used when controls change
@@ -118,10 +117,21 @@ function initProjection (view) {
   sortDirection.value = projection.sortDirection
 }
 
+
+function filterDuplicates(dimensions){
+  const set = rdf.termSet()
+  return dimensions.filter(x=>{
+    const result = !set.has(x.ptr.term)
+    set.add(x.ptr.term)
+    return result
+  })
+}
+
 function initFilters (view) {
   // Load filters
   filters.value = filtersFromView(view)
-  cubeDimensions.value = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+  const dimensions = view.dimensions.map(dimension => dimension.cubeDimensions[0]).filter(notNull => notNull)
+  cubeDimensions.value = filterDuplicates(dimensions)
 }
 
 function refreshObservations(){
@@ -157,19 +167,19 @@ const filtersSummary = computed(() => {
       arg,
     }, index) => {
       const dimensionLabel = dimension.out(ns.schema.name, { language: language.value }).value
-      // const dimensionLabel = ptr.node(dimension).out(ns.schema.name, { language }).value
-      // const dimensionValueLabels = labels.value[dimension.path.value]
-      const valueLabel = (
-        // dimensionValueLabels?.node(arg).out(ns.schema.name, { language }).value ||
+
+      const valueLabel = arg ? (
         ptr.node(arg).out(ns.schema.name, { language: language.value }).value ||
         ptr.node(arg).out(ns.rdfs.label, { language: language.value }).value ||
         ns.shrink(arg.value, cube.value)
-      )
+      ) : 'Undefined'
+
       return {
         dimensionPath,
         index,
-        label: `${dimensionLabel} ${operation.label} ${valueLabel}`,
-      }}))
+        label: `${dimensionLabel} ${operation.label} ${valueLabel}`
+      }
+    }))
 })
 
 function updateDataset (arg) {
@@ -217,9 +227,13 @@ function removeFilter ({
   updateObservations()
 }
 
+const cubeDimensions = ref()
+
+
 defineExpose({
   currentView,
 })
+
 
 </script>
 
