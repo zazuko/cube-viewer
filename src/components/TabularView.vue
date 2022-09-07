@@ -112,9 +112,9 @@ function refreshObservations () {
 
 async function populateLabels (view, terms, callback) {
   const source = view.getMainSource()
-  const uris = [...terms].map(x => `<${x.value}> `).join(', ')
+  const uris = terms.map(x => `<${x.value}> `).join(', ')
   await queryQueue.add(async () => {
-    console.log(`Fetching labels for ${terms.size} entities`)
+    console.log(`Fetching labels for ${terms.length} entities`)
     const result = await source.client.query.construct(`
 CONSTRUCT {
       ?uri <http://schema.org/name> ?label .
@@ -129,7 +129,7 @@ CONSTRUCT {
 
 async function fetchObservationsLabels (view) {
   const terms = observationsTermsWithNoLabel(observations.value, view.ptr)
-  await populateLabels(view, terms, (view) => {
+  await populateLabels(view, [...terms], (view) => {
     currentView.value = view
     refreshObservations()
     console.log('fetch observations labels end')
@@ -148,18 +148,25 @@ function initFilters (view) {
 }
 
 async function fetchShaclLabels (view) {
-  const terms = shaclTermsWithNoLabel(view, view.ptr)
-  await populateLabels(view, terms, (view) => {
-    console.log('fetch shacl labels end')
-  })
+  const terms = [...shaclTermsWithNoLabel(view, view.ptr)]
+  const chunkSize = 50
+  while (terms.length) {
+    const chunk = terms.splice(0, chunkSize)
+    populateLabels(view, chunk, (view) => {
+      console.log('fetch shacl labels end')
+    })
+  }
 }
 
 async function initView (view) {
-  fetchShaclLabels(view)
   setPointers(view)
   initProjection(view)
   initFilters(view)
+  // First the observations and the labels on screen
   await fetchObservationsAndLabels(view)
+  // Later all labels from shacl
+  // @TODO move this to a Web worker
+  fetchShaclLabels(view)
 }
 
 onMounted(() => initView(props.view))
