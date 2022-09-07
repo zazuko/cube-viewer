@@ -69,8 +69,8 @@ const {
   pointer
 } = storeToRefs(langStore)
 
-function updateLanguage (language) {
-  language.value = [language, ...languages, '*']
+function updateLanguage (selectedLang) {
+  language.value = [selectedLang, ...languages, '*']
 }
 
 function isValid () {
