@@ -6,6 +6,34 @@ import * as ns from '../namespace.js'
 
 const defaultLanguage = ['en', '*']
 
+function shaclTermsWithNoLabel (view, pointer) {
+  const result = rdf.termSet()
+  view.dimensions.forEach(dimension => {
+    dimension.cubeDimensions.forEach(cubeDimension => {
+      cubeDimension.in.filter(term => term.termType === 'NamedNode').forEach(named => {
+        if (!pointer.node(named).out(ns.schema.name).value) {
+          result.add(named)
+        }
+      })
+    })
+  })
+  return result
+}
+
+function observationsTermsWithNoLabel (observations, pointer) {
+  const result = rdf.termSet()
+  for (const row of observations.data) {
+    for (const [, value] of Object.entries(row)) {
+      if (value.termType === 'NamedNode') {
+        if (!pointer.node(value).out(ns.schema.name).value) {
+          result.add(value)
+        }
+      }
+    }
+  }
+  return result
+}
+
 function getShortLabel (base, term) {
   if (term.termType === 'Literal') {
     return term.value
@@ -66,4 +94,5 @@ const useLangStore = defineStore('langStore', () => {
   }
 })
 
+export { shaclTermsWithNoLabel, observationsTermsWithNoLabel }
 export default useLangStore

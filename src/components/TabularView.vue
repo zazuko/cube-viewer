@@ -9,7 +9,7 @@ import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch }
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import useFilterStore from '../stores/filterStore.js'
-import useLangStore from '../stores/langStore.js'
+import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
 import { getBoundedViewPointer } from './common/debug.js'
 import { filtersFromView, filtersToView } from './common/filters.js'
 import { projectionFromView, updateViewProjection } from './common/projection.js'
@@ -110,19 +110,8 @@ function refreshObservations () {
   debugCounter.value = debugCounter.value + 1
 }
 
-async function fetchLabels (view) {
-  const pointer = view.ptr
-  const terms = rdf.termSet()
-  for (const row of observations.value.data) {
-    for (const [, value] of Object.entries(row)) {
-      if (value.termType === 'NamedNode') {
-        if (!pointer.node(value).out(ns.schema.name).value) {
-          terms.add(value)
-        }
-      }
-    }
-  }
-  const source = props.view.getMainSource()
+async function populateLabels (view, terms, callback) {
+  const source = view.getMainSource()
   const uris = [...terms].map(x => `<${x.value}> `).join(', ')
   await queryQueue.add(async () => {
     console.log(`Fetching labels for ${terms.size} entities`)
@@ -134,16 +123,23 @@ CONSTRUCT {
       FILTER (?uri IN (${uris}))
 }`)
     view.dataset.addAll(result)
+    callback(view)
+  })
+}
+
+async function fetchObservationsLabels (view) {
+  const terms = observationsTermsWithNoLabel(observations.value, view.ptr)
+  await populateLabels(view, terms, (view) => {
     currentView.value = view
     refreshObservations()
-    console.log('fetch labels end')
+    console.log('fetch observations labels end')
   })
 }
 
 async function fetchObservationsAndLabels (view) {
   await fetchObservations(view)
   currentView.value = view
-  fetchLabels(view)
+  fetchObservationsLabels(view)
 }
 
 function initFilters (view) {
@@ -151,7 +147,15 @@ function initFilters (view) {
   filters.value = filtersFromView(view)
 }
 
+async function fetchShaclLabels (view) {
+  const terms = shaclTermsWithNoLabel(view, view.ptr)
+  await populateLabels(view, terms, (view) => {
+    console.log('fetch shacl labels end')
+  })
+}
+
 async function initView (view) {
+  fetchShaclLabels(view)
   setPointers(view)
   initProjection(view)
   initFilters(view)
