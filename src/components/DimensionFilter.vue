@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable */
-import { CubeDimension, Filter, ViewDimension } from 'rdf-cube-view-query'
+import { CubeDimension, ViewDimension } from 'rdf-cube-view-query'
 import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import useLangStore from '../stores/langStore.js'
 import { getOperationLabel, operations } from './common/filters.js'
@@ -47,11 +47,11 @@ function updateOperation (_operation) {
 function tryUpdate () {
   if (arg.value && operation.value) {
     emit('updateFilter', {
-      filter: new Filter({
+      filter: {
         dimension: props.viewDimension,
         operation: operation.value.term,
         arg: arg.value
-      }),
+      },
       index: props.index
     })
   }

@@ -5,7 +5,7 @@ import { XCircleIcon } from '@heroicons/vue/outline'
 import { storeToRefs } from 'pinia'
 import queue from 'promise-the-world/queue.js'
 import rdf from 'rdf-ext'
-import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, toRaw, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
@@ -34,7 +34,7 @@ const sortDimension = shallowRef()
 const sortDirection = shallowRef()
 
 const debugOpen = ref(false)
-const debugCounter = ref(1)
+const refreshCounter = ref(1)
 
 const queryQueue = queue(1)
 
@@ -104,7 +104,7 @@ function initProjection (view) {
 function refreshObservations () {
   // Dirty hack since the view it's a shallow ref
   // It's to update the observations component and show the labels when they arrive
-  debugCounter.value = debugCounter.value + 1
+  refreshCounter.value = refreshCounter.value + 1
 }
 
 async function populateLabels (view, terms, callback) {
@@ -153,12 +153,12 @@ async function fetchShaclLabels (view) {
 async function initView (view) {
   setPointers(view)
   initProjection(view)
-  buildFiltersSummary()
   // First the observations and the labels on screen
   await fetchObservationsAndLabels(view)
   // Later all labels from shacl
   // @TODO move this to a Web worker
   fetchShaclLabels(view)
+  buildFiltersSummary()
 }
 
 onMounted(() => {
@@ -206,13 +206,16 @@ function buildFiltersSummary(){
       args,
       argsList
     } = currElement
-    const dimensionLabel = getDisplay(dimension)
+
+    const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
+    const cubeDimension = viewDimension.cubeDimensions[0]
+
+    const dimensionLabel = getDisplay(cubeDimension.path)
     const operationLabel = getOperationLabel(operation)
 
     const argLabel = arg ? getDisplay(arg) : ''
     const argsLabel = argsLabel ? `${args.map(getDisplay).join(',')}` : ''
     const argsListLabel = argsListLabel ? `[${argsList.map(getDisplay).join(',')}]` : ''
-
     return {
       filter: currElement,
       label: `${dimensionLabel} ${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`
@@ -295,7 +298,7 @@ function getViewDimension (cubeDimension) {
             />
           </th>
         </tr>
-        <tr v-show="filtersSummary.length > 0" :key="`${debugCounter}/filtersSummary`">
+        <tr v-show="filtersSummary.length > 0" :key="`${refreshCounter}/filtersSummary`">
           <td :colspan="cubeDimensions.length" class="border px-2 py-2">
             <div class="flex gap-2 justify-start">
               <span v-for="({filter, label}, index) in filtersSummary" :key="index"
@@ -323,7 +326,7 @@ function getViewDimension (cubeDimension) {
           </td>
         </tr>
         </tbody>
-        <tbody v-else :key="`${debugCounter}/observations`">
+        <tbody v-else :key="`${refreshCounter}/observations`">
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
             v-for="dimension in cubeDimensions"
@@ -360,7 +363,7 @@ function getViewDimension (cubeDimension) {
         <span class="text-gray-500 py-3">toggle debug</span>
       </button>
       <DebugBox
-        :key="`${debugCounter}/debug`"
+        :key="`${refreshCounter}/debug`"
         v-if="debugOpen===true"
         :debugView="currentView"
         @updateDataset="updateDataset"

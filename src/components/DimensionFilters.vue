@@ -2,10 +2,9 @@
 /* eslint-disable */
 import { PlusIcon } from '@heroicons/vue/solid'
 import { CubeDimension, Filter, ViewDimension } from 'rdf-cube-view-query/index.js'
-import { defineProps, onMounted } from 'vue'
+import { defineProps, onMounted, ref } from 'vue'
 import useViewStore from '../stores/viewStore.js'
 import DimensionFilter from './DimensionFilter.vue'
-import {ref} from 'vue'
 
 const emit = defineEmits(['close', 'updateFilters'])
 
@@ -44,24 +43,18 @@ onMounted(() => {
     if (argsList) {
       console.log('pushing argsList')
       data.push({
-        filter,
+        filter:{dimension,operation,argsList},
         exception: 'Cannot edit at the moment'
       })
     } else if (arg) {
       console.log('pushing arg')
       data.push({
-        filter
+        filter:{dimension,operation,arg},
       })
     } else if (args) {
       console.log('pushing args')
       for (const arg of args) {
-        data.push({
-          filter: new Filter({
-            dimension: dimension,
-            operation: operation,
-            arg
-          })
-        })
+        data.push({filter:{dimension,operation,arg}})
       }
     }
   }
@@ -69,10 +62,15 @@ onMounted(() => {
 })
 
 function submit () {
-  const dimensionFilters = filters.value.filter(x=>!x.filterPlaceholder).map(x=>x.filter)
-  updateDimensionFilters(props.viewDimension, dimensionFilters)
+  const dimensionFilters = filters.value.filter(x => !x.filterPlaceholder).map(x => x.filter)
+  try {
+    updateDimensionFilters(props.viewDimension, dimensionFilters)
+    emit('updateFilters')
+  } catch (error) {
+    console.log(error)
+  }
   emit('close')
-  emit('updateFilters')
+
 }
 
 function addFilter () {
