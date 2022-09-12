@@ -1,7 +1,6 @@
 /* eslint-disable */
 import { defineStore } from 'pinia'
 import { Filter } from 'rdf-cube-view-query'
-import rdf from 'rdf-ext'
 import { shallowRef } from 'vue'
 
 const useViewStore = defineStore('viewStore', () => {
@@ -19,30 +18,17 @@ const useViewStore = defineStore('viewStore', () => {
 
   function updateDimensionFilters (viewDimension, newFilters) {
 
-    for (const filter of newFilters) {
-      if (!filter.dimension) {
-        throw Error(`filter ${filter.term} requires a dimension`)
-      }
-      if (!filter.operation) {
-        throw Error(`filter ${filter.term} requires an operation`)
-      }
-      if (!(filter.arg || filter.args || filter.argList)) {
-        throw Error(`filter ${filter.term} requires an argument`)
-      }
-    }
-
     for (const filter of filtersOfDimension(viewDimension)) {
       currentView.value.clearFilter(filter)
     }
     for (const filter of newFilters) {
-
+      // const someFilter = viewDimension.filter.gte(filter.arg, { parent: currentView.value })
       const newFilter = new Filter({
-        term: rdf.blankNode(),
-        parent: currentView.value,
         dimension: viewDimension,
         operation: filter.operation,
         arg: filter.argList ?? filter.arg,
-        argList: !!filter.argList
+        argList: !!filter.argList,
+        parent: currentView.value
       })
 
       currentView.value.addFilter(newFilter)

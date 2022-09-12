@@ -5,7 +5,7 @@ import { XCircleIcon } from '@heroicons/vue/outline'
 import { storeToRefs } from 'pinia'
 import queue from 'promise-the-world/queue.js'
 import rdf from 'rdf-ext'
-import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, toRaw, watch } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
 import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
@@ -199,10 +199,14 @@ function buildFiltersSummary(){
       argsList
     } = currElement
 
+    if (!dimension) {
+      throw Error('Dimension cannot be undefined for filter', currElement)
+    }
+
     const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
     const cubeDimension = viewDimension.cubeDimensions[0]
 
-    function getLabel(term) {
+    function getLabel (term) {
       if (term.termType === 'Literal') {
         return term.value
       }
@@ -213,8 +217,8 @@ function buildFiltersSummary(){
     const operationLabel = getOperationLabel(operation)
 
     const argLabel = arg ? getLabel(arg) : ''
-    const argsLabel = argsLabel ? `${args.map(getLabel).join(',')}` : ''
-    const argsListLabel = argsListLabel ? `[${argsList.map(getLabel).join(',')}]` : ''
+    const argsLabel = args ? `${args.map(getLabel).join(',')}` : ''
+    const argsListLabel = argsList ? `[${argsList.map(getLabel).join(',')}]` : ''
     return {
       filter: currElement,
       label: `${dimensionLabel} ${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`

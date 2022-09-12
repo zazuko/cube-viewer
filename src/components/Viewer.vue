@@ -80,7 +80,6 @@ const {
 )
 
 async function initFromProps () {
-  console.log('initFromProps')
   await execute(DELAY, {
     source: props.source,
     viewInput: props.viewInput
@@ -99,7 +98,6 @@ const params = useUrlSearchParams('history')
 const shareButton = ref()
 
 function prepareParams () {
-  console.log('Prepare params')
   if (tabularView.value) {
     const currentView = tabularView.value.currentView
     const dataset = getBoundedViewPointer(currentView).dataset
