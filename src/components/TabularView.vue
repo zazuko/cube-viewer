@@ -188,14 +188,6 @@ function updateSort (dimension, direction) {
   updateObservations()
 }
 
-// Filters
-const {
-  getDisplayString,
-  getDisplayTerm
-} = langStore
-
-const getDisplay = (term) => getDisplayString(getDisplayTerm(term), { withTypes: false })
-
 const filtersSummary = ref([])
 function buildFiltersSummary(){
   filtersSummary.value =  currentView.value.filters.map((currElement) => {
@@ -210,12 +202,16 @@ function buildFiltersSummary(){
     const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
     const cubeDimension = viewDimension.cubeDimensions[0]
 
-    const dimensionLabel = getDisplay(cubeDimension.path)
+    function getLabel(term) {
+      return currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
+    }
+
+    const dimensionLabel = getLabel(cubeDimension.ptr.term)
     const operationLabel = getOperationLabel(operation)
 
-    const argLabel = arg ? getDisplay(arg) : ''
-    const argsLabel = argsLabel ? `${args.map(getDisplay).join(',')}` : ''
-    const argsListLabel = argsListLabel ? `[${argsList.map(getDisplay).join(',')}]` : ''
+    const argLabel = arg ? getLabel(arg) : ''
+    const argsLabel = argsLabel ? `${args.map(getLabel).join(',')}` : ''
+    const argsListLabel = argsListLabel ? `[${argsList.map(getLabel).join(',')}]` : ''
     return {
       filter: currElement,
       label: `${dimensionLabel} ${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`
