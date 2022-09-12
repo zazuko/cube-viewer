@@ -203,6 +203,9 @@ function buildFiltersSummary(){
     const cubeDimension = viewDimension.cubeDimensions[0]
 
     function getLabel(term) {
+      if (term.termType === 'Literal') {
+        return term.value
+      }
       return currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
     }
 
