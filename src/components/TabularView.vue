@@ -8,10 +8,10 @@ import rdf from 'rdf-ext'
 import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
-import useFilterStore from '../stores/filterStore.js'
 import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
+import useViewStore from '../stores/viewStore.js'
 import { getBoundedViewPointer } from './common/debug.js'
-import { filtersFromView, filtersToView } from './common/filters.js'
+import { getOperationLabel } from './common/filters.js'
 import { projectionFromView, updateViewProjection } from './common/projection.js'
 import DebugBox from './debug/DebugBox.vue'
 import DimensionHeader from './DimensionHeader.vue'
@@ -28,7 +28,6 @@ const props = defineProps({
   }
 })
 
-const currentView = shallowRef()
 const page = ref()
 const pageSize = ref()
 const sortDimension = shallowRef()
@@ -39,22 +38,24 @@ const debugCounter = ref(1)
 
 const queryQueue = queue(1)
 
+const viewStore = useViewStore()
+const {
+  currentView
+} = storeToRefs(viewStore)
+
 const langStore = useLangStore()
 const {
   setPointers
 } = langStore
+
 const {
   language,
   pointer
 } = storeToRefs(langStore)
 
-const filterStore = useFilterStore()
-const {
-  filters
-} = storeToRefs(filterStore)
-
-// Used when controls change
+// Used when projection changes
 const updateObservations = async () => {
+
   if (currentView.value) {
     let v = updateViewProjection({
       view: currentView.value,
@@ -63,13 +64,9 @@ const updateObservations = async () => {
         pageSize: pageSize.value,
         sortDimension: sortDimension.value,
         sortDirection: sortDirection.value,
-        filters: filters.value
       }
     })
-    v = filtersToView({
-      view: v,
-      filters: filters.value
-    })
+
     await fetchObservationsAndLabels(v)
   }
 }
@@ -142,11 +139,6 @@ async function fetchObservationsAndLabels (view) {
   fetchObservationsLabels(view)
 }
 
-function initFilters (view) {
-  // Load filters
-  filters.value = filtersFromView(view)
-}
-
 async function fetchShaclLabels (view) {
   const terms = [...shaclTermsWithNoLabel(view, view.ptr)]
   const chunkSize = 50
@@ -161,7 +153,7 @@ async function fetchShaclLabels (view) {
 async function initView (view) {
   setPointers(view)
   initProjection(view)
-  initFilters(view)
+  buildFiltersSummary()
   // First the observations and the labels on screen
   await fetchObservationsAndLabels(view)
   // Later all labels from shacl
@@ -169,7 +161,10 @@ async function initView (view) {
   fetchShaclLabels(view)
 }
 
-onMounted(() => initView(props.view))
+onMounted(() => {
+  currentView.value = props.view
+  initView(props.view)
+})
 watch(() => props.view, () => initView(props.view))
 
 function updateDataset (arg) {
@@ -194,35 +189,49 @@ function updateSort (dimension, direction) {
 }
 
 // Filters
+const {
+  getDisplayString,
+  getDisplayTerm
+} = langStore
 
-const filtersSummary = computed(() => {
-  return filters.value.map((currElement, index) => {
+const getDisplay = (term) => getDisplayString(getDisplayTerm(term), { withTypes: false })
+
+const filtersSummary = ref([])
+function buildFiltersSummary(){
+  filtersSummary.value =  currentView.value.filters.map((currElement) => {
     const {
       dimension,
       operation,
-      arg
+      arg,
+      args,
+      argsList
     } = currElement
-    const dimensionLabel = dimension.out(ns.schema.name, { language: langStore.language }).value
-    const valueLabel = langStore.getDisplayString(langStore.getDisplayTerm(arg))
+    const dimensionLabel = getDisplay(dimension)
+    const operationLabel = getOperationLabel(operation)
+
+    const argLabel = arg ? getDisplay(arg) : ''
+    const argsLabel = argsLabel ? `${args.map(getDisplay).join(',')}` : ''
+    const argsListLabel = argsListLabel ? `[${argsList.map(getDisplay).join(',')}]` : ''
+
     return {
-      dimension: dimension.path,
-      index,
-      label: `${dimensionLabel} ${operation.label} ${valueLabel}`
+      filter: currElement,
+      label: `${dimensionLabel} ${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`
     }
   })
-})
+}
 
 function removeFilter ({
-  dimensionPath,
-  index
+  filter
 }) {
-  filters.value.splice(index, 1)
+  viewStore.removeFilter({filter})
   page.value = 1
+  buildFiltersSummary()
   updateObservations()
 }
 
 function updateFilters(){
   page.value = 1
+  buildFiltersSummary()
   updateObservations()
 }
 
@@ -255,10 +264,13 @@ const cubeDimensions = computed(() => {
 })
 
 // Expose
-
 defineExpose({
   currentView
 })
+
+function getViewDimension (cubeDimension) {
+  return currentView.value.dimension({ cubeDimension })
+}
 
 </script>
 
@@ -266,7 +278,6 @@ defineExpose({
 
   <div>
     <template v-if="cubeDimensions">
-
       <!-- h-1 is a hack to make the header cells layout work -->
       <table class="h-1">
         <thead>
@@ -275,6 +286,7 @@ defineExpose({
               class="border border-b-2 align-top text-left h-full">
             <dimension-header
               :dimension="dimension"
+              :view-dimension="getViewDimension(dimension)"
               :language="language"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
@@ -283,13 +295,13 @@ defineExpose({
             />
           </th>
         </tr>
-        <tr v-show="filtersSummary.length > 0">
+        <tr v-show="filtersSummary.length > 0" :key="`${debugCounter}/filtersSummary`">
           <td :colspan="cubeDimensions.length" class="border px-2 py-2">
             <div class="flex gap-2 justify-start">
-              <span v-for="(filter, index) in filtersSummary" :key="index"
+              <span v-for="({filter, label}, index) in filtersSummary" :key="index"
                     class="tag bg-gray-100 rounded-md flex items-center gap-1">
-                <span>{{ filter.label }}</span>
-                <button title="Remove filter" @click="removeFilter(filter)" class="button-text">
+                <span>{{ label }}</span>
+                <button title="Remove filter" @click="removeFilter({filter})" class="button-text">
                   <x-circle-icon class="w-5 h-5"/>
                 </button>
               </span>

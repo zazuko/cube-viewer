@@ -1,35 +1,36 @@
-<template>
-  <input type="text" :value="modelValue?.value" @change="update" />
-</template>
+<script setup>
+/* eslint-disable */
 
-<script>
-import { defineComponent } from 'vue'
 import { Term } from '@rdfjs/data-model'
 import RDF from 'rdf-ext'
+import { defineProps } from 'vue'
 
-export default defineComponent({
-  name: 'TermInput',
-  props: {
-    modelValue: {
-      type: Term,
-      required: false,
-    },
-    datatype: {
-      type: Term,
-      required: false,
-    },
+const emit = defineEmits(['update:modelValue'])
+const props = defineProps({
+  modelValue: {
+    type: Term,
+    required: false
   },
-  emits: ['update:modelValue'],
-
-  methods: {
-    update (event) {
-      const textValue = event.target.value
-      const value = textValue
-        ? RDF.literal(textValue, this.datatype)
-        : null
-
-      this.$emit('update:modelValue', value)
-    },
-  },
+  datatype: {
+    type: Term,
+    required: false
+  }
 })
+
+function update (event) {
+  const textValue = event.target.value
+  const value = textValue
+    ? RDF.literal(textValue, props.datatype)
+    : null
+
+  emit('update:modelValue', value)
+
+}
+
+
 </script>
+
+
+<template>
+  <input type="text" :value="modelValue?.value" @change="update"/>
+</template>

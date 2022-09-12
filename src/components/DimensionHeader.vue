@@ -4,10 +4,10 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import { AnnotationIcon, FilterIcon } from '@heroicons/vue/outline'
 import { ChevronDownIcon, ChevronUpIcon, LinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
-import { CubeDimension } from 'rdf-cube-view-query'
+import { CubeDimension, ViewDimension } from 'rdf-cube-view-query'
 import { computed, defineEmits, defineProps } from 'vue'
 import * as ns from '../namespace'
-import useFilterStore from '../stores/filterStore.js'
+import useViewStore from '../stores/viewStore.js'
 import useLangStore from '../stores/langStore.js'
 import DataKindIcon from './DataKindIcon.vue'
 import DimensionFilters from './DimensionFilters.vue'
@@ -19,6 +19,10 @@ const emit = defineEmits(['updateSort','updateFilters'])
 const props = defineProps({
   dimension: {
     type: CubeDimension,
+    required: true
+  },
+  viewDimension: {
+    type: ViewDimension,
     required: true
   },
   sortDimension: {
@@ -33,9 +37,11 @@ const props = defineProps({
 
 const langStore = useLangStore()
 
+const viewStore = useViewStore()
 const {
   filtersOfDimension
-} = useFilterStore()
+} = viewStore
+
 
 const label = computed(() => props.dimension.ptr.out(ns.schema.name, { language: langStore.language }).value)
 const description = computed(() => props.dimension.ptr.out(ns.schema.comment, { language: langStore.language }).value)
@@ -82,12 +88,13 @@ function toggleDirection (direction) {
       </button>
       <popover class="relative">
         <popover-button as="button">
-          <filter-icon class="w-5 h-5" :class="{ 'text-primary-500': filtersOfDimension(dimension).length > 0 }"/>
+          <filter-icon class="w-5 h-5" :class="{ 'text-primary-500': filtersOfDimension(viewDimension).length > 0 }"/>
         </popover-button>
         <popover-panel v-slot="{ close }" class="z-10 absolute bg-white border rounded shadow-md p-2">
           <dimension-filters
             :dimension="dimension"
-            @close="()=>close"
+            :view-dimension="viewDimension"
+            @close="()=>close()"
             @updateFilters="emit('updateFilters')"
           />
         </popover-panel>

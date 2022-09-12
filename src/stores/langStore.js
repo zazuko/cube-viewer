@@ -22,7 +22,8 @@ function shaclTermsWithNoLabel (view, pointer) {
 
 function observationsTermsWithNoLabel (observations, pointer) {
   const result = rdf.termSet()
-  for (const row of observations.data) {
+
+  for (const row of observations?.data ?? []) {
     for (const [, value] of Object.entries(row)) {
       if (value.termType === 'NamedNode') {
         if (!pointer.node(value).out(ns.schema.name).value) {
@@ -50,9 +51,9 @@ function getShortLabel (base, term) {
 const useLangStore = defineStore('langStore', () => {
 
   // State
-  const base = ref()
-  const language = ref(defaultLanguage)
-  const pointer = ref(rdf.clownface())
+  const language = ref(defaultLanguage) // The current application language
+  const base = ref('') // Used to shrink labels
+  const pointer = ref(rdf.clownface()) // The current data cache
 
   // Getters
   function setPointers (view) {
@@ -75,10 +76,12 @@ const useLangStore = defineStore('langStore', () => {
     return term
   }
 
-  function getDisplayString (term) {
+  function getDisplayString (term, options) {
+
+    const withTypes = options?.withTypes ?? true
     if (term.termType === 'Literal') {
-      const datatype = term.datatype ? `^^${getShortLabel(base.value, term.datatype)}` : ''
-      const language = term.language ? `@${term.language}` : ''
+      const datatype = (withTypes && term.datatype) ? `^^${getShortLabel(base.value, term.datatype)}` : ''
+      const language = (withTypes && term.language) ? `@${term.language}` : ''
       return `"${term.value}${language}"${datatype}`
     } else {
       return term.value
@@ -94,5 +97,5 @@ const useLangStore = defineStore('langStore', () => {
   }
 })
 
-export { shaclTermsWithNoLabel, observationsTermsWithNoLabel }
+export { observationsTermsWithNoLabel, shaclTermsWithNoLabel }
 export default useLangStore
