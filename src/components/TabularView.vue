@@ -11,7 +11,6 @@ import * as Remote from '../remote'
 import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
 import useViewStore from '../stores/viewStore.js'
 import { getBoundedViewPointer } from './common/debug.js'
-import { getOperationLabel } from './common/filters.js'
 import { projectionFromView, updateViewProjection } from './common/projection.js'
 import DebugBox from './debug/DebugBox.vue'
 import DimensionHeader from './DimensionHeader.vue'
@@ -245,7 +244,7 @@ function isMeasureDimension (dimension) {
   return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
 }
 
-const cubeDimensions = computed(() => {
+const dims = computed(() => {
   if (!currentView.value) {
     return undefined
   }
@@ -255,22 +254,31 @@ const cubeDimensions = computed(() => {
   for (const filter of currentView.value.filters) {
     dimsUsedInFilters.add(filter.dimension)
   }
-  // Dimensions with filters to have priority when filtering duplicates
-  viewDimensions.sort((a, b) => {
-    const order = (dimension) => dimsUsedInFilters.has(dimension.ptr.term) ? 0 : Infinity
-    return order(a) - order(b)
-  })
-  const cubeDimensions = viewDimensions.map(dimension => dimension.cubeDimensions[0])
+  const dims = viewDimensions.map(dimension => ({
+    viewDimension: dimension,
+    cubeDimension: dimension.cubeDimensions[0],
+    hasFilter: !!dimsUsedInFilters.has(dimension.ptr.term)
+  }))
     .filter(notNull => notNull)
-
-  return filterDuplicates(cubeDimensions)
+  return filterDuplicates(dims)
 })
 
-function filterDuplicates (dimensions) {
-  const set = rdf.termSet()
-  return dimensions.filter(x => {
-    const result = !set.has(x.ptr.term)
-    set.add(x.ptr.term)
+function filterDuplicates (dims) {
+
+  dims.sort((a, b) => {
+    const order = (dim) => dim.hasFilter ? 0 : Infinity
+    return order(a) - order(b)
+  })
+
+  const cubeDimensionSet = rdf.termSet()
+  return dims.filter(dim => {
+    const {
+      viewDimension,
+      cubeDimension,
+      hasFilter
+    } = dim
+    const result = (!cubeDimensionSet.has(cubeDimension.ptr.term) || hasFilter)
+    cubeDimensionSet.add(cubeDimension.ptr.term)
     return result
   })
 }
@@ -280,25 +288,21 @@ defineExpose({
   currentView
 })
 
-function getViewDimension (cubeDimension) {
-  return currentView.value.dimension({ cubeDimension })
-}
-
 </script>
 
 <template>
 
   <div>
-    <template v-if="cubeDimensions">
+    <template v-if="dims">
       <!-- h-1 is a hack to make the header cells layout work -->
       <table class="h-1">
         <thead>
         <tr>
-          <th v-for="dimension in cubeDimensions" :key="dimension.ptr.term.value"
+          <th v-for="{viewDimension, cubeDimension} in dims" :key="viewDimension.ptr.term.value"
               class="border border-b-2 align-top text-left h-full">
             <dimension-header
-              :dimension="dimension"
-              :view-dimension="getViewDimension(dimension)"
+              :dimension="cubeDimension"
+              :view-dimension="viewDimension"
               :language="language"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
@@ -308,7 +312,7 @@ function getViewDimension (cubeDimension) {
           </th>
         </tr>
         <tr v-show="filtersSummary.length > 0" :key="`${refreshCounter}/filtersSummary`">
-          <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+          <td :colspan="dims.length" class="border px-2 py-2">
             <div class="flex gap-2 justify-start">
               <span v-for="({filter, label}, index) in filtersSummary" :key="index"
                     class="tag bg-gray-100 rounded-md flex items-center gap-1">
@@ -323,14 +327,14 @@ function getViewDimension (cubeDimension) {
         </thead>
         <tbody v-if="observations.isLoading">
         <tr v-for="i in Array(pageSize)" :key="i">
-          <td :colspan="cubeDimensions.length" class="border px-2 py-2">
+          <td :colspan="dims.length" class="border px-2 py-2">
             <loading-icon/>
           </td>
         </tr>
         </tbody>
         <tbody v-else-if="observations.error">
         <tr>
-          <td :colspan="cubeDimensions.length" class="border px-2 py-1">
+          <td :colspan="dims.length" class="border px-2 py-1">
             {{ observations.error }}
           </td>
         </tr>
@@ -338,16 +342,16 @@ function getViewDimension (cubeDimension) {
         <tbody v-else :key="`${refreshCounter}/observations`">
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
-            v-for="dimension in cubeDimensions"
-            :key="dimension.ptr.term.value"
+            v-for="{cubeDimension} in dims"
+            :key="cubeDimension.ptr.term.value"
             class="border px-2 py-1 whitespace-nowrap"
             :class="{
-                'text-right tabular-nums': isNumericScale(dimension),
-                'bg-primary-50': isMeasureDimension(dimension),
+                'text-right tabular-nums': isNumericScale(cubeDimension),
+                'bg-primary-50': isMeasureDimension(cubeDimension),
               }"
           >
             <observation-value
-              :value="observation[dimension.path.value]"
+              :value="observation[cubeDimension.path.value]"
               :pointer="pointer"
               :language="language"
             />

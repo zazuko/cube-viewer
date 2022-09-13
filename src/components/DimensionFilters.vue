@@ -68,6 +68,7 @@ function submit () {
   const dimensionFilters = filters.value.filter(x => !x.filterPlaceholder).map(x => x.filter)
   try {
     updateDimensionFilters(props.viewDimension, dimensionFilters)
+    emit('updateFilters')
   } catch (error) {
     console.log(error)
   }
