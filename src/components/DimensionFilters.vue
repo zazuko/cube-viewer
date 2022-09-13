@@ -1,8 +1,9 @@
 <script setup>
 /* eslint-disable */
 import { PlusIcon } from '@heroicons/vue/solid'
-import { CubeDimension, Filter, ViewDimension } from 'rdf-cube-view-query/index.js'
+import { CubeDimension, ViewDimension } from 'rdf-cube-view-query/index.js'
 import { defineProps, onMounted, ref } from 'vue'
+import useLangStore from '../stores/langStore.js'
 import useViewStore from '../stores/viewStore.js'
 import DimensionFilter from './DimensionFilter.vue'
 
@@ -25,6 +26,7 @@ const {
   filtersOfDimension,
   updateDimensionFilters,
 } = viewStore
+const langStore = useLangStore()
 
 const filters = ref([])
 
@@ -44,7 +46,7 @@ onMounted(() => {
       console.log('pushing argsList')
       data.push({
         filter:{dimension,operation,argsList},
-        exception: 'Cannot edit at the moment'
+        readOnly: langStore.getFilterLabel({ operation, arg, args, argsList })
       })
     } else if (arg) {
       console.log('pushing arg')
@@ -53,9 +55,10 @@ onMounted(() => {
       })
     } else if (args) {
       console.log('pushing args')
-      for (const arg of args) {
-        data.push({filter:{dimension,operation,arg}})
-      }
+      data.push({
+        filter:{dimension,operation,args},
+        readOnly: langStore.getFilterLabel({ operation, arg, args, argsList })
+      })
     }
   }
   filters.value = data

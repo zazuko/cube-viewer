@@ -129,6 +129,7 @@ async function fetchObservationsLabels (view) {
   await populateLabels(view, [...terms], (view) => {
     currentView.value = view
     refreshObservations()
+    buildFiltersSummary()
     console.log('fetch observations labels end')
   })
 }
@@ -153,12 +154,12 @@ async function fetchShaclLabels (view) {
 async function initView (view) {
   setPointers(view)
   initProjection(view)
+  buildFiltersSummary()
   // First the observations and the labels on screen
   await fetchObservationsAndLabels(view)
   // Later all labels from shacl
   // @TODO move this to a Web worker
   fetchShaclLabels(view)
-  buildFiltersSummary()
 }
 
 onMounted(() => {
@@ -200,28 +201,21 @@ function buildFiltersSummary(){
     } = currElement
 
     if (!dimension) {
-      throw Error('Dimension cannot be undefined for filter', currElement)
+      throw Error('Filter requires dimension', currElement)
     }
 
     const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
     const cubeDimension = viewDimension.cubeDimensions[0]
-
-    function getLabel (term) {
-      if (term.termType === 'Literal') {
-        return term.value
-      }
-      return currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
+    function getDimensionLabel (term) {
+      const label = currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
+      return (label.value) ? label.value : langStore.getDisplayString(term.value)
     }
 
-    const dimensionLabel = getLabel(cubeDimension.ptr.term)
-    const operationLabel = getOperationLabel(operation)
-
-    const argLabel = arg ? getLabel(arg) : ''
-    const argsLabel = args ? `${args.map(getLabel).join(',')}` : ''
-    const argsListLabel = argsList ? `[${argsList.map(getLabel).join(',')}]` : ''
+    const dimensionLabel = getDimensionLabel(cubeDimension.ptr.term)
+    const filterLabel = langStore.getFilterLabel({ operation, arg, args, argsList })
     return {
       filter: currElement,
-      label: `${dimensionLabel} ${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`
+      label: `${dimensionLabel} ${filterLabel}`
     }
   })
 }
@@ -251,6 +245,27 @@ function isMeasureDimension (dimension) {
   return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
 }
 
+const cubeDimensions = computed(() => {
+  if (!currentView.value) {
+    return undefined
+  }
+  const viewDimensions = currentView.value.dimensions
+
+  const dimsUsedInFilters = rdf.termSet()
+  for (const filter of currentView.value.filters) {
+    dimsUsedInFilters.add(filter.dimension)
+  }
+  // Dimensions with filters to have priority when filtering duplicates
+  viewDimensions.sort((a, b) => {
+    const order = (dimension) => dimsUsedInFilters.has(dimension.ptr.term) ? 0 : Infinity
+    return order(a) - order(b)
+  })
+  const cubeDimensions = viewDimensions.map(dimension => dimension.cubeDimensions[0])
+    .filter(notNull => notNull)
+
+  return filterDuplicates(cubeDimensions)
+})
+
 function filterDuplicates (dimensions) {
   const set = rdf.termSet()
   return dimensions.filter(x => {
@@ -259,15 +274,6 @@ function filterDuplicates (dimensions) {
     return result
   })
 }
-
-const cubeDimensions = computed(() => {
-  if (!currentView.value) {
-    return undefined
-  }
-  const dimensions = currentView.value.dimensions.map(dimension => dimension.cubeDimensions[0])
-    .filter(notNull => notNull)
-  return filterDuplicates(dimensions)
-})
 
 // Expose
 defineExpose({

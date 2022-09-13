@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import rdf from 'rdf-ext'
 import { ref } from 'vue'
+import { getOperationLabel } from '../components/common/filters.js'
 import * as ns from '../namespace.js'
 
 const defaultLanguage = ['en', '*']
@@ -35,15 +36,15 @@ function observationsTermsWithNoLabel (observations, pointer) {
   return result
 }
 
-function getShortLabel (base, term) {
-  if (term.termType === 'Literal') {
-    return term.value
-  }
-  const string = term.value
-  const result = ns.shrink(string, base)
+function getShortLabel (term, base) {
+  const isString = (val) => (typeof val === 'string' || val instanceof String)
+  const termString = isString(term) ? term : term.value
+  const baseString = isString(base) ? base : base.value
+
+  const result = ns.shrink(termString, baseString)
   // @TODO find a better heuristic
-  if (result === string) { // If the term was not modified, try again with a shorter base
-    return ns.shrink(string, base.split('/').splice(0, this.base.split('/').length - 1).join('/'))
+  if (result === termString) { // If the term was not modified, try again with a shorter base
+    return ns.shrink(termString, baseString.split('/').splice(0, baseString.split('/').length - 1).join('/'))
   }
   return result
 }
@@ -59,7 +60,7 @@ const useLangStore = defineStore('langStore', () => {
   function setPointers (view) {
     const cubeTerm = view.dimensions[0].cubes[0]
     pointer.value = view.ptr.node(cubeTerm)
-    base.value = pointer.value.term.value
+    base.value = pointer.value.term
   }
 
   function getDisplayTerm (term) {
@@ -76,26 +77,39 @@ const useLangStore = defineStore('langStore', () => {
     return term
   }
 
-  function getDisplayString (term, options) {
-
-    const withTypes = options?.withTypes ?? true
+  function getDisplayString (term, withTypes = false) {
     if (term.termType === 'Literal') {
-      const datatype = (withTypes && term.datatype) ? `^^${getShortLabel(base.value, term.datatype)}` : ''
+      const datatype = (withTypes && term.datatype) ? `^^${getShortLabel(term.datatype, base.value, )}` : ''
       const language = (withTypes && term.language) ? `@${term.language}` : ''
       return `"${term.value}${language}"${datatype}`
     } else {
-      return term.value
+      return getShortLabel(term, base.value )
     }
   }
+
+  function getFilterLabel({ operation, arg, args, argsList }){
+    function getLabel (term) {
+      const displayTerm = getDisplayTerm(term)
+      return getDisplayString(displayTerm)
+    }
+    const operationLabel = getOperationLabel(operation)
+
+    const argLabel = arg ? getLabel(arg) : ''
+    const argsLabel = (!arg && args) ? `${args.map(getLabel).join(',')}` : ''
+    const argsListLabel = argsList ? `[${argsList.map(getLabel).join(',')}]` : ''
+    return `${operationLabel} ${argLabel}${argsLabel}${argsListLabel}`
+  }
+
 
   return {
     language,
     pointer,
     setPointers,
     getDisplayTerm,
-    getDisplayString
+    getDisplayString,
+    getFilterLabel
   }
 })
 
-export { observationsTermsWithNoLabel, shaclTermsWithNoLabel }
+export { observationsTermsWithNoLabel, shaclTermsWithNoLabel, getShortLabel }
 export default useLangStore
