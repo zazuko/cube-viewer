@@ -64,11 +64,11 @@ const exceptionLabel = ref()
 onMounted(() => {
   const {
     filter,
-    exception
+    readOnly
   } = props.filterWrapper
 
-  if (exception) {
-    exceptionLabel.value = exception
+  if (readOnly) {
+    exceptionLabel.value = readOnly
   } else if (filter) {
     operation.value = {
       label: getOperationLabel(filter.operation),
@@ -84,7 +84,7 @@ onMounted(() => {
 <template>
   <fieldset class="flex items-center gap-2">
 
-    <template v-if="filterWrapper.exception">{{ exceptionLabel }}</template>
+    <template v-if="filterWrapper.readOnly">{{ exceptionLabel }}</template>
     <template v-else>
 
       <SelectBox :modelValue="operation" @update:modelValue="updateOperation" :options="operations">
