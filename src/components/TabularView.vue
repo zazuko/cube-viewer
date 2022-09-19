@@ -4,7 +4,6 @@
 import { XCircleIcon } from '@heroicons/vue/outline'
 import { storeToRefs } from 'pinia'
 import queue from 'promise-the-world/queue.js'
-import rdf from 'rdf-ext'
 import { computed, defineEmits, defineProps, onMounted, ref, shallowRef, watch } from 'vue'
 import * as ns from '../namespace'
 import * as Remote from '../remote'
@@ -248,40 +247,12 @@ const dims = computed(() => {
   if (!currentView.value) {
     return undefined
   }
-  const viewDimensions = currentView.value.dimensions
-
-  const dimsUsedInFilters = rdf.termSet()
-  for (const filter of currentView.value.filters) {
-    dimsUsedInFilters.add(filter.dimension)
-  }
-  const dims = viewDimensions.map(dimension => ({
+  const viewDimensions = currentView.value.projectionDimensions
+  return viewDimensions ? viewDimensions.map(dimension => ({
     viewDimension: dimension,
     cubeDimension: dimension.cubeDimensions[0],
-    hasFilter: !!dimsUsedInFilters.has(dimension.ptr.term)
-  }))
-    .filter(notNull => notNull)
-  return filterDuplicates(dims)
+  })) : []
 })
-
-function filterDuplicates (dims) {
-
-  dims.sort((a, b) => {
-    const order = (dim) => dim.hasFilter ? 0 : Infinity
-    return order(a) - order(b)
-  })
-
-  const cubeDimensionSet = rdf.termSet()
-  return dims.filter(dim => {
-    const {
-      viewDimension,
-      cubeDimension,
-      hasFilter
-    } = dim
-    const result = (!cubeDimensionSet.has(cubeDimension.ptr.term) || hasFilter)
-    cubeDimensionSet.add(cubeDimension.ptr.term)
-    return result
-  })
-}
 
 // Expose
 defineExpose({

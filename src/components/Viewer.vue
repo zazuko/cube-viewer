@@ -119,7 +119,7 @@ function checkView (view) {
       return 'The view has no dimensions'
     }
     if (!view.dimensions[0].cubes) {
-      return 'No cubes'
+      return 'No cubes in view'
     }
   }
 }

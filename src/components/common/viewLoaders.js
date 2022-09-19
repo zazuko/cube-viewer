@@ -44,6 +44,12 @@ function applyDefaults ({ view }) {
   const pageSize = view.limit() ?? DEFAULT_PAGE_SIZE
   view.offset(offset)
   view.limit(pageSize)
+
+  // If no ordering of columns are defined in projection
+  if (!view.projectionDimensions) {
+    view.setDefaultColumns()
+  }
+
   return view
 }
 
