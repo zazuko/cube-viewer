@@ -18,7 +18,7 @@ function getBoundedDescription ({
     dataset,
     level,
     quad
-  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 20) || (quad.subject.value.startsWith(view.value) && level < 20))
+  }) => level === 0 || (quad.subject.termType === 'BlankNode' && level < 20) || (quad.predicate.value.startsWith(view.value) && level < 20))
   const result = rdf.dataset()
   result.addAll(descriptionWithBlankNodes.match({
     term,
