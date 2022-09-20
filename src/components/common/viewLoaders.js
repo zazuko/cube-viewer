@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { CubeSource, View } from 'rdf-cube-view-query/index.js'
-import { ViewBuilder } from 'rdf-cube-view-query/lib/viewUtils.js'
+import { ViewBuilder } from 'rdf-cube-view-query/lib/builders.js'
 import * as ns from '../../namespace.js'
 import { DEFAULT_PAGE_SIZE } from './projection.js'
 
