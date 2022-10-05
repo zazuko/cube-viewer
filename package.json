@@ -31,7 +31,7 @@
     "pinia": "^2.0.21",
     "process": "^0.11.10",
     "promise-the-world": "^1.0.1",
-    "rdf-cube-view-query": "^1.10.0",
+    "rdf-cube-view-query": "^1.11.0",
     "rdf-ext": "^2.0.1",
     "stream-browserify": "^3.0.0",
     "vue": "^3.0.0",
