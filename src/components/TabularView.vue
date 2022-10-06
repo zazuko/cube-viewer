@@ -203,13 +203,13 @@ function buildFiltersSummary(){
     }
 
     const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
-    const cubeDimension = viewDimension.cubeDimensions[0]
     function getDimensionLabel (term) {
       const label = currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
       return (label.value) ? label.value : langStore.getDisplayString(term.value)
     }
 
-    const dimensionLabel = getDimensionLabel(cubeDimension.ptr.term)
+    const path = viewDimension.ptr.out(ns.view.from).out(ns.view.path).term
+    const dimensionLabel = getDimensionLabel(path)
     const filterLabel = langStore.getFilterLabel({ operation, arg, args, argsList })
     return {
       filter: currElement,

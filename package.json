@@ -18,7 +18,7 @@
     "/dist/cube-viewer.umd.min.js"
   ],
   "dependencies": {
-    "@headlessui/vue": "^1.1.1",
+    "@headlessui/vue": "^1.7.3",
     "@heroicons/vue": "^1.0.1",
     "@rdfjs-elements/rdf-editor": "^0.5.3",
     "@rdfjs/formats-common": "^2.2.0",

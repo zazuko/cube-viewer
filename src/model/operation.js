@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as ns from '../../namespace.js'
+import * as ns from '../namespace.js'
 
 const operations = [
   {
@@ -8,27 +8,33 @@ const operations = [
   },
   {
     term: ns.view.Ne,
-    label: '!='
+    label: '!=',
+    multipleValues: true
   },
   {
     term: ns.view.In,
-    label: 'in'
+    label: 'in',
+    multipleValues: true
   },
   {
     term: ns.view.Lt,
-    label: '<'
+    label: '<',
+    onlyLiterals: true
   },
   {
     term: ns.view.Lte,
-    label: '<='
+    label: '<=',
+    onlyLiterals: true
   },
   {
     term: ns.view.Gt,
-    label: '>'
+    label: '>',
+    onlyLiterals: true
   },
   {
     term: ns.view.Gte,
-    label: '>='
+    label: '>=',
+    onlyLiterals: true
   }
 ]
 
@@ -40,4 +46,7 @@ function getOperationLabel (term) {
   }
 }
 
-export { operations, getOperationLabel }
+export {
+  operations,
+  getOperationLabel
+}

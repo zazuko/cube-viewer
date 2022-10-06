@@ -10,6 +10,7 @@
       <ListboxOptions class="absolute z-10 min-w-full border rounded-md shadow-md bg-white max-h-80 overflow-y-auto outline-none">
         <ListboxOption
           v-for="(option, index) in options"
+          @click="(event)=>event.preventDefault()"
           :key="index"
           :value="option"
           as="template"

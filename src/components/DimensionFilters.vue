@@ -1,7 +1,6 @@
 <script setup>
 /* eslint-disable */
 import { PlusIcon } from '@heroicons/vue/solid'
-import { CubeDimension, ViewDimension } from 'rdf-cube-view-query/index.js'
 import { defineProps, onMounted, ref } from 'vue'
 import useLangStore from '../stores/langStore.js'
 import useViewStore from '../stores/viewStore.js'
@@ -11,15 +10,14 @@ const emit = defineEmits(['close', 'updateFilters'])
 
 const props = defineProps({
   dimension: {
-    type: CubeDimension,
+    type: Object,
     required: true
   },
   viewDimension: {
-    type: ViewDimension,
+    type: Object,
     required: true
   }
 })
-
 
 const viewStore = useViewStore()
 const {
@@ -37,27 +35,20 @@ onMounted(() => {
     const {
       dimension,
       operation,
-      arg,
       args,
       argsList
     } = filter
 
     if (argsList) {
-      console.log('pushing argsList')
+      console.log('pushing argsList') // This corresponds to a list of arguments (never seen a case)
       data.push({
         filter:{dimension,operation,argsList},
-        readOnly: langStore.getFilterLabel({ operation, arg, args, argsList })
+        readOnly: langStore.getFilterLabel({ operation, args, argsList })
       })
-    } else if (arg) {
-      console.log('pushing arg')
-      data.push({
-        filter:{dimension,operation,arg},
-      })
-    } else if (args) {
-      console.log('pushing args')
+    } else {
+      console.log('pushing args') // This corresponds to a set of arguments
       data.push({
         filter:{dimension,operation,args},
-        readOnly: langStore.getFilterLabel({ operation, arg, args, argsList })
       })
     }
   }
@@ -65,6 +56,12 @@ onMounted(() => {
 })
 
 function submit () {
+
+  for (const current of filters.value){
+    console.log('filter',current)
+  }
+
+
   const dimensionFilters = filters.value.filter(x => !x.filterPlaceholder).map(x => x.filter)
   try {
     updateDimensionFilters(props.viewDimension, dimensionFilters)
@@ -73,7 +70,6 @@ function submit () {
     console.log(error)
   }
   emit('close')
-
 }
 
 function addFilter () {
@@ -82,7 +78,7 @@ function addFilter () {
   })
 }
 
-function updateFilter({ index,filter }){
+function updateFilter({ index, filter }){
   filters.value[index]= { filter }
 }
 
@@ -97,8 +93,7 @@ function updateFilter({ index,filter }){
         :dimension="dimension"
         :viewDimension="viewDimension"
         :filterWrapper="current"
-        @updateFilter="updateFilter"
-        :index="index"
+        @updateFilter="(filter)=>updateFilter({index, filter})"
       />
       <button type="button" @click="addFilter" class="button-text justify-end">
         <plus-icon class="w-5 h-5" />

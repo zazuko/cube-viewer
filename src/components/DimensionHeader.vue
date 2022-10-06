@@ -4,7 +4,6 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import { AnnotationIcon, FilterIcon } from '@heroicons/vue/outline'
 import { ChevronDownIcon, ChevronUpIcon, LinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
-import { CubeDimension, ViewDimension } from 'rdf-cube-view-query'
 import { computed, defineEmits, defineProps } from 'vue'
 import * as ns from '../namespace'
 import useViewStore from '../stores/viewStore.js'
@@ -18,15 +17,15 @@ const emit = defineEmits(['updateSort','updateFilters'])
 
 const props = defineProps({
   dimension: {
-    type: CubeDimension,
+    type: Object,
     required: true
   },
   viewDimension: {
-    type: ViewDimension,
+    type: Object,
     required: true
   },
   sortDimension: {
-    type: CubeDimension,
+    type: Object,
     default: null
   },
   sortDirection: {

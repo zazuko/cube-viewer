@@ -1,30 +1,27 @@
 <script setup>
 /* eslint-disable */
-import { CubeDimension, ViewDimension } from 'rdf-cube-view-query'
-import { defineEmits, defineProps, onMounted, ref } from 'vue'
+import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
+import { operations } from '../model/operation.js'
 import useLangStore from '../stores/langStore.js'
-import { getOperationLabel, operations } from './common/filters.js'
 import SelectBox from './SelectBox.vue'
-import TermDisplay from './TermDisplay.vue'
 import TermInput from './TermInput.vue'
+import SelectBoxMultiple from './SelectBoxMultiple.vue'
+
+import TermDisplay from './TermDisplay.vue'
 
 const emit = defineEmits(['updateFilter'])
 
 const props = defineProps({
   dimension: {
-    type: CubeDimension,
+    type: Object,
     required: true
   },
   viewDimension: {
-    type: ViewDimension,
+    type: Object,
     required: true
   },
   filterWrapper: {
     type: Object,
-    required: true
-  },
-  index: {
-    type: Number,
     required: true
   }
 })
@@ -34,83 +31,113 @@ const {
   getDisplayTerm
 } = langStore
 
-function updateArg (_arg) {
-  arg.value = _arg
+const validOperations = ref([])
+const currentOperation = ref()
+const args = ref([])
+const exceptionLabel = ref()
+
+function updateOperation (operation) {
+  currentOperation.value = operation
+  args.value = []
+}
+
+function updateArg ({ term }) {
+  args.value = [term]
+  currentArg.value = term
   tryUpdate()
 }
 
-function updateOperation (_operation) {
-  operation.value = _operation
+function updateArgs ({ terms }) {
+  args.value = terms
   tryUpdate()
 }
 
 function tryUpdate () {
-  if (arg.value && operation.value) {
+  if ((args.value.length) && currentOperation.value) {
     emit('updateFilter', {
-      filter: {
-        dimension: props.viewDimension,
-        operation: operation.value.term,
-        arg: arg.value
-      },
-      index: props.index
+      dimension: props.viewDimension,
+      operation: currentOperation.value.term,
+      args: args.value
     })
   }
 }
 
-const arg = ref()
-const operation = ref()
-const exceptionLabel = ref()
-
 onMounted(() => {
+
+  validOperations.value = operations.filter(x => x.onlyLiterals ? !isNamed.value : true)
   const {
     filter,
     readOnly
   } = props.filterWrapper
 
   if (readOnly) {
-    exceptionLabel.value = readOnly
+    exceptionLabel.value = readOnly // Used to handle the cases we haven't seen yet
   } else if (filter) {
-    operation.value = {
-      label: getOperationLabel(filter.operation),
-      term: filter.operation
-    }
-    arg.value = filter.arg
+    currentOperation.value = operations.find(x => x.term.equals(filter.operation))
+    args.value = filter.args
   }
 })
 
+const isNamed = computed(() => props.dimension.in && props.dimension.in.length > 0)
 
+const currentArg = ref()
 </script>
 
 <template>
   <fieldset class="flex items-center gap-2">
-
     <template v-if="filterWrapper.readOnly">{{ exceptionLabel }}</template>
     <template v-else>
 
-      <SelectBox :modelValue="operation" @update:modelValue="updateOperation" :options="operations">
+      <SelectBox :modelValue="currentOperation" @update:modelValue="updateOperation" :options="validOperations">
         <template v-slot:button="{ selected }">
           <span v-if="selected" :term="selected.term">{{ selected.label }}</span>
           <span v-else class="text-gray-500">Operation</span>
         </template>
       </SelectBox>
-      <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="arg" @update:modelValue="updateArg"
-                 :options="dimension.in">
-        <template v-slot:button="{ selected }">
-          <term-display v-if="selected" :term="getDisplayTerm(selected)"/>
-          <span v-else class="text-gray-500">Value</span>
+
+      <template v-if="currentOperation">
+        <!--        MULTIPLE_NAMED-->
+        <template v-if="isNamed && currentOperation.multipleValues">
+          <SelectBoxMultiple :modelValue="args"
+                             @update:modelValue="(terms)=>updateArgs({terms})"
+                             :options="dimension.in">
+            <template v-slot:button="{ selected }">
+              <template v-if="selected">
+                <span v-if="selected.length===0" class="text-gray-500">select</span>
+                <term-display v-else-if="selected.length===1" :term="getDisplayTerm(selected[0])"/>
+                <span v-else class="text-gray-500">({{ selected.length }}) items</span>
+              </template>
+              <span v-else class="text-gray-500">Value</span>
+            </template>
+            <template v-slot:option="{ option }">
+              <term-display :term="getDisplayTerm(option)"/>
+            </template>
+          </SelectBoxMultiple>
         </template>
-        <template v-slot:option="{ option }">
-          <term-display :term="getDisplayTerm(option)"/>
+        <template v-else-if="isNamed && !currentOperation.multipleValues">
+          <!--          SINGLE_NAMED-->
+          <SelectBox :modelValue="currentArg"
+                     @update:modelValue="(currentArg)=>updateArg({term:currentArg})"
+                     :options="dimension.in">
+            <template v-slot:button="{ selected }">
+              <term-display v-if="selected" :term="getDisplayTerm(selected)"/>
+              <span v-else class="text-gray-500">Value</span>
+            </template>
+            <template v-slot:option="{ option }">
+              <term-display :term="getDisplayTerm(option)"/>
+            </template>
+          </SelectBox>
         </template>
-      </SelectBox>
-      <div v-else>
-        <term-input
-          placeholder="Value"
-          :modelValue="arg"
-          @update:modelValue="updateArg"
-          :datatype="dimension.datatype"
-        />
-      </div>
+        <template v-if="!isNamed">
+          <term-input
+            placeholder="Value"
+            :modelValue="currentArg"
+            @update:modelValue="(currentArg)=>updateArg({term:currentArg})"
+            :datatype="dimension.datatype"
+          />
+        </template>
+      </template>
+
     </template>
   </fieldset>
 </template>

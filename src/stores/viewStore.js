@@ -17,15 +17,17 @@ const useViewStore = defineStore('viewStore', () => {
   }
 
   function updateDimensionFilters (viewDimension, newFilters) {
+
     for (const filter of filtersOfDimension(viewDimension)) {
-      currentView.value.clearFilter(filter)
+      if (!filter.argList) { // Keep it like it was
+        currentView.value.clearFilter(filter)
+      }
     }
     for (const filter of newFilters) {
       const newFilter = new Filter({
         dimension: viewDimension,
         operation: filter.operation,
-        arg: filter.argList ?? filter.args ?? filter.arg,
-        argList: !!filter.argList,
+        arg: filter.args,
         parent: currentView.value
       })
 

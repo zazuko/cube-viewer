@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import rdf from 'rdf-ext'
 import { ref } from 'vue'
-import { getOperationLabel } from '../components/common/filters.js'
+import { getOperationLabel } from '../model/operation.js'
 import * as ns from '../namespace.js'
 
 const defaultLanguage = ['en', '*']
