@@ -10,6 +10,7 @@ import * as Remote from '../remote'
 import useLangStore, { observationsTermsWithNoLabel, shaclTermsWithNoLabel } from '../stores/langStore.js'
 import useViewStore from '../stores/viewStore.js'
 import { getBoundedViewPointer } from './common/debug.js'
+import { getEffectiveDimensions } from './common/labelFor.js'
 import { projectionFromView, updateViewProjection } from './common/projection.js'
 import DebugBox from './debug/DebugBox.vue'
 import DimensionHeader from './DimensionHeader.vue'
@@ -123,7 +124,7 @@ CONSTRUCT {
 }
 
 async function fetchObservationsLabels (view) {
-  const terms = observationsTermsWithNoLabel(observations.value, view.ptr)
+  const terms = observationsTermsWithNoLabel({observations:observations.value, view})
   await populateLabels(view, [...terms], (view) => {
     currentView.value = view
     refreshObservations()
@@ -243,16 +244,7 @@ function isMeasureDimension (dimension) {
   return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
 }
 
-const dims = computed(() => {
-  if (!currentView.value) {
-    return undefined
-  }
-  const viewDimensions = currentView.value.projectionDimensions
-  return viewDimensions ? viewDimensions.map(dimension => ({
-    viewDimension: dimension,
-    cubeDimension: dimension.cubeDimensions[0],
-  })) : []
-})
+const dims = computed(() => getEffectiveDimensions({view:currentView.value}))
 
 // Expose
 defineExpose({
@@ -313,7 +305,7 @@ defineExpose({
         <tbody v-else :key="`${refreshCounter}/observations`">
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
-            v-for="{cubeDimension} in dims"
+            v-for="{cubeDimension, labelCubePath} in dims"
             :key="cubeDimension.ptr.term.value"
             class="border px-2 py-1 whitespace-nowrap"
             :class="{
@@ -323,6 +315,7 @@ defineExpose({
           >
             <observation-value
               :value="observation[cubeDimension.path.value]"
+              :forceLabel="labelCubePath ? observation[labelCubePath.value]: undefined"
               :pointer="pointer"
               :language="language"
             />

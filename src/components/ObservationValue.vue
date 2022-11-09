@@ -10,6 +10,10 @@ const props = defineProps({
   value: {
     type: Term,
     required: true
+  },
+  forceLabel: {
+    type: Term,
+    required: false
   }
 })
 
@@ -23,7 +27,8 @@ const langStore = useLangStore()
   <term-display v-else-if="value.termType === 'Literal'" :term="value"/>
   <div v-else class="flex-grow flex items-center justify-end">
     <button @click="showResourceExplorer = true" class="tag bg-gray-200 whitespace-nowrap">
-      <term-display :term="value"/>
+      <term-display v-if="forceLabel" :term="forceLabel"/>
+      <term-display v-else :term="value"/>
     </button>
     <resource-explorer
       :uri="value"

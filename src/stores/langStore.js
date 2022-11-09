@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import rdf from 'rdf-ext'
 import { ref } from 'vue'
+import { isLabelDimensionTarget } from '../components/common/labelFor.js'
 import { getOperationLabel } from '../model/operation.js'
 import * as ns from '../namespace.js'
 
@@ -21,13 +22,19 @@ function shaclTermsWithNoLabel (view, pointer) {
   return result
 }
 
-function observationsTermsWithNoLabel (observations, pointer) {
+function observationsTermsWithNoLabel ({
+  observations,
+  view
+}) {
   const result = rdf.termSet()
 
   for (const row of observations?.data ?? []) {
-    for (const [, value] of Object.entries(row)) {
-      if (value.termType === 'NamedNode') {
-        if (!pointer.node(value).out(ns.schema.name).value) {
+    for (const [cubePathStr, value] of Object.entries(row)) {
+      if (value.termType === 'NamedNode' && !isLabelDimensionTarget({
+        cubePathStr,
+        view
+      })) {
+        if (!view.ptr.node(value).out(ns.schema.name).value) {
           result.add(value)
         }
       }
