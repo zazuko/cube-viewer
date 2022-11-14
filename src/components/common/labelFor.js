@@ -1,6 +1,7 @@
 /* eslint-disable */
 import rdf from 'rdf-ext'
 import * as ns from '../../namespace.js'
+import { cubeDimensionsWithFallBack, toViewDimension } from './cubeDimensions.js'
 
 function isLabelDimension (dimension) {
   return !!dimension.ptr.has(ns.view.labelFor).term
@@ -15,7 +16,7 @@ function getLabelCubeDimension ({
     const viewLabelDimension = view.dimensions.find(dimension => {
       return dimension.ptr.term.equals(labelDimension)
     })
-    return viewLabelDimension ? viewLabelDimension.cubeDimensions[0] : undefined
+    return viewLabelDimension ? cubeDimensionsWithFallBack({ dimension: viewLabelDimension })[0] : undefined
   }
 }
 
@@ -26,13 +27,14 @@ function getEffectiveDimensions ({ view }) {
       return viewDimensions.filter(dim => !isLabelDimension(dim))
         .map(dimension => {
           return {
-          viewDimension: dimension,
-          cubeDimension: dimension.cubeDimensions[0],
-          labelCubePath: getLabelCubeDimension({
-            dimension,
-            view
-          })?.path
-        }})
+            viewDimension: dimension,
+            cubeDimension: cubeDimensionsWithFallBack({ dimension })[0],
+            labelCubePath: getLabelCubeDimension({
+              dimension,
+              view
+            })?.path,
+            viewAs: dimension.ptr.out(ns.view.as).term
+          }})
     }
   }
   return []
@@ -42,7 +44,7 @@ function isLabelDimensionTarget ({
   cubePathStr,
   view
 }) {
-  const viewDimension = view.dimension({ cubeDimension: rdf.namedNode(cubePathStr) })
+  const viewDimension = toViewDimension({ view, cubeDimension:rdf.namedNode(cubePathStr) })
   return !!(viewDimension && viewDimension.ptr.in(ns.view.labelFor).term)
 }
 

@@ -2,7 +2,7 @@
 /* eslint-disable */
 import '@rdfjs-elements/rdf-editor'
 import rdf from 'rdf-ext'
-
+import { cubeDimensionsWithFallBack } from '../common/cubeDimensions.js'
 import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
 import { View } from 'rdf-cube-view-query'
 
@@ -64,8 +64,8 @@ const viewInfo = computed(() => {
   for (const dimension of props.debugView.dimensions) {
     result.push({
       viewDimensionTerm: dimension.ptr.term.value,
-      cubeDimensionsTerms:dimension.cubeDimensions.map(x => x.path.value),
-      cubesTerms:dimension.cubes.map(x => x.value)
+      cubeDimensionsTerms: cubeDimensionsWithFallBack({ dimension }).map(x => x.path.value),
+      cubesTerms: dimension.cubes.map(x => x.value)
     })
   }
 

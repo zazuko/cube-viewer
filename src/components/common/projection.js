@@ -1,6 +1,6 @@
 /* eslint-disable */
 import * as ns from '../../namespace.js'
-
+import { toViewDimension } from './cubeDimensions.js'
 const DEFAULT_PAGE_SIZE = 10
 
 function getSorting (view) {
@@ -64,10 +64,10 @@ function updateViewProjection ({
     if (!cubeDimension) {
       return null
     }
-    const orderDimension = view.dimension({ cubeDimension })
-    if (!orderDimension) {
-      throw Error('No dimension found for ', cubeDimension.path)
-    }
+    const orderDimension = toViewDimension({
+      view,
+      cubeDimension
+    })
     return [
       {
         dimension: orderDimension.ptr.term,

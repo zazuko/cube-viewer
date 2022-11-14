@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import rdf from 'rdf-ext'
 import { ref } from 'vue'
+import { cubeDimensionsWithFallBack } from '../components/common/cubeDimensions.js'
 import { isLabelDimensionTarget } from '../components/common/labelFor.js'
 import { getOperationLabel } from '../model/operation.js'
 import * as ns from '../namespace.js'
@@ -11,7 +12,7 @@ const defaultLanguage = ['en', '*']
 function shaclTermsWithNoLabel (view, pointer) {
   const result = rdf.termSet()
   view.dimensions.forEach(dimension => {
-    dimension.cubeDimensions.forEach(cubeDimension => {
+    cubeDimensionsWithFallBack({dimension}).forEach(cubeDimension => {
       cubeDimension.in.filter(term => term.termType === 'NamedNode').forEach(named => {
         if (!pointer.node(named).out(ns.schema.name).value) {
           result.add(named)

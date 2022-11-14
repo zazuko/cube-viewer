@@ -14,7 +14,6 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { CubeDimension } from 'rdf-cube-view-query'
 import { InformationCircleIcon } from '@heroicons/vue/outline'
 import ResourceDetailsDialog from './ResourceDetailsDialog.vue'
 
@@ -26,7 +25,7 @@ export default defineComponent({
   },
   props: {
     dimension: {
-      type: CubeDimension,
+      type: Object,
       required: true,
     },
   },

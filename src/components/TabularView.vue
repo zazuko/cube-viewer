@@ -305,7 +305,7 @@ defineExpose({
         <tbody v-else :key="`${refreshCounter}/observations`">
         <tr v-for="(observation, index) in observations.data" :key="index">
           <td
-            v-for="{cubeDimension, labelCubePath} in dims"
+            v-for="{cubeDimension, labelCubePath, viewAs} in dims"
             :key="cubeDimension.ptr.term.value"
             class="border px-2 py-1 whitespace-nowrap"
             :class="{
@@ -314,7 +314,7 @@ defineExpose({
               }"
           >
             <observation-value
-              :value="observation[cubeDimension.path.value]"
+              :value="observation[viewAs.value]"
               :forceLabel="labelCubePath ? observation[labelCubePath.value]: undefined"
               :pointer="pointer"
               :language="language"
