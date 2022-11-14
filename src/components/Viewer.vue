@@ -110,20 +110,6 @@ function prepareParams () {
   }
 }
 
-function checkView (view) {
-  if (view) {
-    if (!view.cubes) {
-      return 'Wrong rdf-cube-view-query'
-    }
-    if (!view.dimensions) {
-      return 'The view has no dimensions'
-    }
-    if (!view.dimensions[0].cubes) {
-      return 'No cubes in view'
-    }
-  }
-}
-
 </script>
 
 <template>
@@ -151,9 +137,6 @@ function checkView (view) {
         </template>
       </header>
       <template v-if="view">
-        <div v-if="checkView(view)" class="text-red-500">
-          {{ checkView(view) }}
-        </div>
         <tabular-view
           ref="tabularView"
           @updateDataset="updateDataset"
