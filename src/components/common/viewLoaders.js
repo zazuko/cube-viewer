@@ -8,12 +8,14 @@ async function viewFromCubeUri ({ source, cubeUri }) {
   const cube = await source.cube(cubeUri)
   cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
+  checkCubeDimensions({view})
   return applyDefaults({ view })
 }
 
 async function viewFromViewUri ({ source, viewUri }) {
   const view = await source.view(viewUri)
   await view.fetchCubesShapes()
+  checkCubeDimensions({view})
   return applyDefaults({ view })
 }
 
@@ -35,7 +37,24 @@ async function viewFromDataset ({
     view.source = fallbackSource
   }
   await view.fetchCubesShapes()
+  checkCubeDimensions({view})
   return applyDefaults({ view })
+}
+
+function checkCubeDimensions ({ view }) {
+  for (const dimension of view.dimensions) {
+
+    const cubeDimensions = dimension.cubeDimensions
+
+    if (!cubeDimensions.length) {
+      throw Error(`no cube-dimensions found for view-dimension ${dimension.ptr.value}, through cube:observationConstraint`)
+    }
+    for (const cubeDimension of cubeDimensions) {
+      if (!cubeDimension.path) {
+        throw Error(`no path found for ${cubeDimension.ptr.value}`)
+      }
+    }
+  }
 }
 
 function applyDefaults ({ view }) {

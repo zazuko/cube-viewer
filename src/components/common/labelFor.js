@@ -6,7 +6,7 @@ function isLabelDimension (dimension) {
   return !!dimension.ptr.has(ns.view.labelFor).term
 }
 
-function getLabelCubePath ({
+function getLabelCubeDimension ({
   dimension,
   view
 }) {
@@ -15,7 +15,7 @@ function getLabelCubePath ({
     const viewLabelDimension = view.dimensions.find(dimension => {
       return dimension.ptr.term.equals(labelDimension)
     })
-    return viewLabelDimension ? viewLabelDimension.cubeDimensions[0].path : undefined
+    return viewLabelDimension ? viewLabelDimension.cubeDimensions[0] : undefined
   }
 }
 
@@ -24,14 +24,15 @@ function getEffectiveDimensions ({ view }) {
     const viewDimensions = view.projectionDimensions
     if (viewDimensions) {
       return viewDimensions.filter(dim => !isLabelDimension(dim))
-        .map(dimension => ({
+        .map(dimension => {
+          return {
           viewDimension: dimension,
           cubeDimension: dimension.cubeDimensions[0],
-          labelCubePath: getLabelCubePath({
+          labelCubePath: getLabelCubeDimension({
             dimension,
             view
-          })
-        }))
+          })?.path
+        }})
     }
   }
   return []
