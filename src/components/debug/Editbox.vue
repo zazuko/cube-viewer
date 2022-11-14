@@ -29,6 +29,15 @@ function onQuadsChanged({ detail }){
   emit('updateView', detail.value)
 }
 
+const prefixes = ref({
+  view:'https://cube.link/view/',
+  purl:'http://purl.org/dc/terms/',
+  schema:'http://schema.org/',
+  cube:'https://cube.link/',
+  rdf:'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+  shacl:'http://www.w3.org/ns/shacl#'
+})
+
 </script>
 
 <template>
@@ -40,6 +49,7 @@ function onQuadsChanged({ detail }){
     </div>
 
     <rdf-editor ref="editor"
+                :customPrefixes="prefixes"
                 :format="format"
                 :quads="quads"
                 auto-parse
