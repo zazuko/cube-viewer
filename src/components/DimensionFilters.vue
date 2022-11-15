@@ -40,13 +40,13 @@ onMounted(() => {
     } = filter
 
     if (argsList) {
-      console.log('pushing argsList') // This corresponds to a list of arguments (never seen a case)
+      // This corresponds to a list of arguments (never seen a case)
       data.push({
         filter:{dimension,operation,argsList},
         readOnly: langStore.getFilterLabel({ operation, args, argsList })
       })
     } else {
-      console.log('pushing args') // This corresponds to a set of arguments
+      // This corresponds to a set of arguments
       data.push({
         filter:{dimension,operation,args},
       })
@@ -56,12 +56,6 @@ onMounted(() => {
 })
 
 function submit () {
-
-  for (const current of filters.value){
-    console.log('filter',current)
-  }
-
-
   const dimensionFilters = filters.value.filter(x => !x.filterPlaceholder).map(x => x.filter)
   try {
     updateDimensionFilters(props.viewDimension, dimensionFilters)

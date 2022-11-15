@@ -23,10 +23,10 @@ const {
 const title = computed(() => {
   return getDisplayString ? getDisplayString(props.term) : props.term
 })
+
 const displayValue = computed(() => {
   return getDisplayTerm ? getDisplayTerm(props.term).value : props.term.value
 })
-
 
 </script>
 

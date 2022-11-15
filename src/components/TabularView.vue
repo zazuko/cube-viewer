@@ -74,7 +74,6 @@ const observations = ref(Remote.loading())
 const observationCount = ref(Remote.loading())
 
 const fetchObservations = async (view) => {
-  console.log('fetch observations')
   observations.value = Remote.loading()
   if (!view) return
   await queryQueue.add(async () => {
@@ -165,6 +164,7 @@ onMounted(() => {
   currentView.value = props.view
   initView(props.view)
 })
+
 watch(() => props.view, () => initView(props.view))
 
 function updateDataset (arg) {
@@ -203,20 +203,23 @@ function buildFiltersSummary(){
       throw Error('Filter requires dimension', currElement)
     }
 
-    const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
     function getDimensionLabel (term) {
       const label = currentView.value.ptr.node(term).out(ns.schema.name, { language: language.value })
       return (label.value) ? label.value : langStore.getDisplayString(term.value)
     }
 
-    const path = viewDimension.ptr.out(ns.view.from).out(ns.view.path).term
-    const dimensionLabel = getDimensionLabel(path)
-    const filterLabel = langStore.getFilterLabel({ operation, arg, args, argsList })
-    return {
-      filter: currElement,
-      label: `${dimensionLabel} ${filterLabel}`
+    const viewDimension = currentView.value.dimensions.find(x => x.term.equals(dimension))
+    if (viewDimension) {
+      const path = viewDimension.ptr.out(ns.view.from).out(ns.view.path).term
+      const dimensionLabel = getDimensionLabel(path)
+      const filterLabel = langStore.getFilterLabel({ operation, arg, args, argsList })
+      return {
+        filter: currElement,
+        label: `${dimensionLabel} ${filterLabel}`
+      }
     }
-  })
+
+  }).filter(notNull=>notNull)
 }
 
 function removeFilter ({

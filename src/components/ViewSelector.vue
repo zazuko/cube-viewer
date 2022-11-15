@@ -7,7 +7,6 @@
     {{ views.error }}
   </div>
   <select v-else :value="viewUri" @change="onSelect">
-<!--    <option>Select view</option>-->
     <option v-for="view in views.data" :key="view.term.value" :value="view.term.value">
       {{ view.term.value }}
     </option>

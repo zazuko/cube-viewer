@@ -1,6 +1,5 @@
 <script setup>
 /* eslint-disable */
-
 import { Term } from '@rdfjs/data-model'
 import RDF from 'rdf-ext'
 import { defineProps } from 'vue'
@@ -26,10 +25,7 @@ function update (event) {
   emit('update:modelValue', value)
 
 }
-
-
 </script>
-
 
 <template>
   <input type="text" :value="modelValue?.value" @change="update"/>
