@@ -15,7 +15,7 @@ import ViewSelector from './ViewSelector.vue'
 const entityTypes = ['cubes', 'views']
 const languages = ['de', 'fr', 'it', 'rm', 'en']
 
-const params = useUrlSearchParams('history')
+const params = useUrlSearchParams('hash-params')
 
 const props = defineProps({
   source: {

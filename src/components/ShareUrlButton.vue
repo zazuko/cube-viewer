@@ -27,6 +27,7 @@ async function copyURL (url) {
   })
   const res = await response
   if (res.status<200 || res.status >= 300) {
+    console.error('shortener error', res.status)
     source.value = url
   } else {
     source.value = await response.text()

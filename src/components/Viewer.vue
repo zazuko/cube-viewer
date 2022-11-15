@@ -94,18 +94,17 @@ async function updateDataset ({ dataset }) {
 }
 
 const tabularView = ref()
-const params = useUrlSearchParams('history')
 const shareButton = ref()
+
+const params = useUrlSearchParams('hash-params')
 
 function prepareParams () {
   if (tabularView.value) {
     const currentView = tabularView.value.currentView
     const dataset = getBoundedViewPointer(currentView).dataset
     const datasetN3 = dataset.toString()
-    const url = new URL(window.location.href)
-    url.searchParams.set('view', datasetN3)
-    url.searchParams.delete('cubeUri')
-    url.searchParams.delete('viewUri')
+    const endpointUrl = params.endpointUrl
+    const url = new URL(`${document.location.protocol}//${document.location.host}/#view=${encodeURIComponent(datasetN3)}&endpointUrl=${encodeURIComponent(endpointUrl)}`)
     shareButton.value.copyURL(url)
   }
 }
