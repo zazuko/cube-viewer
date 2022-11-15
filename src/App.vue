@@ -9,7 +9,7 @@ import SourceConfig from './components/SourceConfig.vue'
 import Viewer from './components/Viewer.vue'
 
 const parser = new Parser()
-const params = useUrlSearchParams('history')
+const params = useUrlSearchParams('hash-params')
 
 const source = ref(null)
 const viewInput = ref()
