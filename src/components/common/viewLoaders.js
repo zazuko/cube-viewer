@@ -65,13 +65,13 @@ function applyDefaults ({ view }) {
   view.offset(offset)
   view.limit(pageSize)
 
-  // If no ordering of columns are defined in projection
   if (!view.projectionDimensions) {
-    view.setDefaultColumns()
+    throw Error('requires a projection with dimensions defined')
   }
 
   return view
 }
+
 
 export {
   viewFromCubeUri, viewFromDataset, viewFromViewUri
