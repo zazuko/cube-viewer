@@ -1,7 +1,6 @@
 # cube-viewer
 
-Cube Viewer is both an **app** and a **reusable component** to visualize data
-cubes based on the [rdf-cube-schema](https://github.com/zazuko/rdf-cube-schema).
+Cube Viewer is both an **app** and a **reusable component** to visualize data cubes based on the [rdf-cube-schema](https://github.com/zazuko/rdf-cube-schema).
 
 A demo of the app is deployed at [cube-viewer.zazuko.com](https://cube-viewer.zazuko.com).
 
@@ -17,8 +16,7 @@ The following query params are supported:
 - `cube`: URI of the cube
 - `sourceGraph`: URI of the graph
 - `user`: username to connect to the endpoint
-- `password`: password to connect to the endpoint (it's probably not a good
-  idea to share links that contain passwords...)
+- `password`: password to connect to the endpoint (it's probably not a good idea to share links that contain passwords...)
 
 ## Use the component
 
@@ -27,34 +25,36 @@ TODO
 ## Development
 
 Setup project:
-```
+
+```sh
 git clone https://github.com/zazuko/cube-viewer.git
 cd cube-viewer
 npm install
 ```
 
 Start development server:
-```
+
+```sh
 npm run serve
 ```
 
 Run tests:
-```
+
+```sh
 npm run test:unit
 npm run lint
 ```
 
 Compile app for production:
-```
+
+```sh
 npm run build
 ```
 
 Compile component app for production:
-```
+
+```sh
 npm run build-wc
 ```
 
-Deploy a new version of the app:
-```
-npm run deploy
-```
+A new version of the app will be deployed on each commit on the `main` branch.
