@@ -27,11 +27,6 @@ const props = defineProps({
   }
 })
 
-const page = ref()
-const pageSize = ref()
-const sortDimension = shallowRef()
-const sortDirection = shallowRef()
-
 const debugOpen = ref(false)
 const refreshCounter = ref(1)
 
@@ -52,9 +47,39 @@ const {
   pointer
 } = storeToRefs(langStore)
 
+async function initView (view) {
+  setPointers(view)
+  initProjection(view)
+  buildFiltersSummary()
+
+  // @TODO move label fetchers to Web workers
+
+  // First the observations and the labels on screen
+  await fetchObservationsAndLabels(view)
+  // Later all labels from shacl, to be used in filters
+  fetchShaclLabels(view)
+}
+
+onMounted(() => {
+  currentView.value = props.view
+  initView(props.view)
+})
+
+defineExpose({
+  currentView
+})
+
+watch(() => props.view, () => initView(props.view))
+
+/**
+ * Observation values
+ */
+
+const observations = ref(Remote.loading())
+const observationCount = ref(Remote.loading())
+
 // Used when projection changes
 const updateObservations = async () => {
-
   if (currentView.value) {
     let v = updateViewProjection({
       view: currentView.value,
@@ -65,13 +90,9 @@ const updateObservations = async () => {
         sortDirection: sortDirection.value,
       }
     })
-
     await fetchObservationsAndLabels(v)
   }
 }
-
-const observations = ref(Remote.loading())
-const observationCount = ref(Remote.loading())
 
 const fetchObservations = async (view) => {
   observations.value = Remote.loading()
@@ -90,6 +111,21 @@ const fetchObservations = async (view) => {
   })
 }
 
+function refreshObservations () {
+  // Dirty hack since the view it's a shallow ref
+  // It's to update the observations component and show the labels when they arrive
+  refreshCounter.value = refreshCounter.value + 1
+}
+
+/**
+ * Projections
+ */
+
+const page = ref()
+const pageSize = ref()
+const sortDimension = shallowRef()
+const sortDirection = shallowRef()
+
 function initProjection (view) {
   // Get all the controls from the view
   const projection = projectionFromView(view)
@@ -99,10 +135,36 @@ function initProjection (view) {
   sortDirection.value = projection.sortDirection
 }
 
-function refreshObservations () {
-  // Dirty hack since the view it's a shallow ref
-  // It's to update the observations component and show the labels when they arrive
-  refreshCounter.value = refreshCounter.value + 1
+function updatePage (pageArg) {
+  page.value = pageArg
+  updateObservations()
+}
+
+function updatePageSize (pageSizeArg) {
+  pageSize.value = pageSizeArg
+  updateObservations()
+}
+
+function updateSort (dimension, direction) {
+  sortDimension.value = dimension
+  sortDirection.value = direction
+  page.value = 1
+  updateObservations()
+}
+
+/**
+ * labels
+ */
+
+async function fetchShaclLabels (view) {
+  const terms = [...shaclTermsWithNoLabel(view, view.ptr)]
+  const chunkSize = 50
+  while (terms.length) {
+    const chunk = terms.splice(0, chunkSize)
+    populateLabels(view, chunk, (view) => {
+      console.log('fetch shacl labels end')
+    })
+  }
 }
 
 async function populateLabels (view, terms, callback) {
@@ -122,6 +184,12 @@ CONSTRUCT {
   })
 }
 
+async function fetchObservationsAndLabels (view) {
+  await fetchObservations(view)
+  currentView.value = view
+  fetchObservationsLabels(view)
+}
+
 async function fetchObservationsLabels (view) {
   const terms = observationsTermsWithNoLabel({observations:observations.value, view})
   await populateLabels(view, [...terms], (view) => {
@@ -132,61 +200,9 @@ async function fetchObservationsLabels (view) {
   })
 }
 
-async function fetchObservationsAndLabels (view) {
-  await fetchObservations(view)
-  currentView.value = view
-  fetchObservationsLabels(view)
-}
-
-async function fetchShaclLabels (view) {
-  const terms = [...shaclTermsWithNoLabel(view, view.ptr)]
-  const chunkSize = 50
-  while (terms.length) {
-    const chunk = terms.splice(0, chunkSize)
-    populateLabels(view, chunk, (view) => {
-      console.log('fetch shacl labels end')
-    })
-  }
-}
-
-async function initView (view) {
-  setPointers(view)
-  initProjection(view)
-  buildFiltersSummary()
-  // First the observations and the labels on screen
-  await fetchObservationsAndLabels(view)
-  // Later all labels from shacl
-  // @TODO move this to a Web worker
-  fetchShaclLabels(view)
-}
-
-onMounted(() => {
-  currentView.value = props.view
-  initView(props.view)
-})
-
-watch(() => props.view, () => initView(props.view))
-
-function updateDataset (arg) {
-  emit('updateDataset', arg)
-}
-
-function updatePage (pageArg) {
-  page.value = pageArg
-  updateObservations()
-}
-
-function updatePageSize (pageSizeArg) {
-  pageSize.value = pageSizeArg
-  updateObservations()
-}
-
-function updateSort (dimension, direction) {
-  sortDimension.value = dimension
-  sortDirection.value = direction
-  page.value = 1
-  updateObservations()
-}
+/**
+ * Filters
+ */
 
 const filtersSummary = ref([])
 function buildFiltersSummary(){
@@ -237,7 +253,14 @@ function updateFilters(){
   updateObservations()
 }
 
-// Computed and helpers
+function updateDataset (arg) {
+  emit('updateDataset', arg)
+}
+
+/**
+ * Computed and helpers
+ */
+
 function isNumericScale (dimension) {
   const scaleType = dimension.ptr.out(ns.qudt.scaleType).term
   return ns.qudt.RatioScale.equals(scaleType) || ns.qudt.IntervalScale.equals(scaleType)
@@ -248,11 +271,6 @@ function isMeasureDimension (dimension) {
 }
 
 const dims = computed(() => getEffectiveDimensions({view:currentView.value}))
-
-// Expose
-defineExpose({
-  currentView
-})
 
 </script>
 

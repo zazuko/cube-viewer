@@ -3,29 +3,6 @@ import * as ns from '../../namespace.js'
 import { toViewDimension } from './cubeDimensions.js'
 const DEFAULT_PAGE_SIZE = 10
 
-function getSorting (view) {
-  const orderBy = view.orderBy()
-
-  if (!orderBy) {
-    return {
-      sortDimension: null,
-      sortDirection: ns.view.Ascending,
-    }
-  } else if (orderBy.length===1) {
-    const {
-      sortDimension,
-      sortDirection
-    } = orderBy[0]
-    return {
-      sortDimension,
-      sortDirection
-    }
-  } else if (orderBy.length>1){
-    throw Error('Only one criterion supported')
-  }
-
-}
-
 function projectionFromView (view) {
   const offset = view.offset() ?? 0
   const pageSize = view.limit() ?? DEFAULT_PAGE_SIZE
@@ -83,6 +60,27 @@ function updateViewProjection ({
   return view
 }
 
+function getSorting (view) {
+  const orderBy = view.orderBy()
+
+  if (!orderBy) {
+    return {
+      sortDimension: null,
+      sortDirection: ns.view.Ascending
+    }
+  } else if (orderBy.length === 1) {
+    const {
+      sortDimension,
+      sortDirection
+    } = orderBy[0]
+    return {
+      sortDimension,
+      sortDirection
+    }
+  } else if (orderBy.length > 1) {
+    throw Error('Only one criterion supported')
+  }
+}
 
 export {
   projectionFromView, updateViewProjection, DEFAULT_PAGE_SIZE

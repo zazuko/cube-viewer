@@ -9,14 +9,14 @@ async function viewFromCubeUri ({ source, cubeUri }) {
   const cube = await source.cube(cubeUri)
   cube.source = CubeSource.fromSource(cube.source, cube)
   const view = View.fromCube(cube)
-  checkCubeDimensions({view})
+  checkViewData({view})
   return applyDefaults({ view })
 }
 
 async function viewFromViewUri ({ source, viewUri }) {
   const view = await source.view(viewUri)
   await view.fetchCubesShapes()
-  checkCubeDimensions({view})
+  checkViewData({view})
   return applyDefaults({ view })
 }
 
@@ -38,11 +38,16 @@ async function viewFromDataset ({
     view.source = fallbackSource
   }
   await view.fetchCubesShapes()
-  checkCubeDimensions({view})
+  checkViewData({view})
   return applyDefaults({ view })
 }
 
-function checkCubeDimensions ({ view }) {
+function checkViewData ({ view }) {
+
+  if (!view.projectionDimensions) {
+    throw Error('requires a projection with dimensions defined')
+  }
+
   for (const dimension of view.dimensions) {
 
     const cubeDimensions = cubeDimensionsWithFallBack({ dimension })
@@ -64,14 +69,8 @@ function applyDefaults ({ view }) {
   const pageSize = view.limit() ?? DEFAULT_PAGE_SIZE
   view.offset(offset)
   view.limit(pageSize)
-
-  if (!view.projectionDimensions) {
-    throw Error('requires a projection with dimensions defined')
-  }
-
   return view
 }
-
 
 export {
   viewFromCubeUri, viewFromDataset, viewFromViewUri
