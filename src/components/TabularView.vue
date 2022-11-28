@@ -170,18 +170,21 @@ async function fetchShaclLabels (view) {
 async function populateLabels (view, terms, callback) {
   const source = view.getMainSource()
   const uris = terms.map(x => `<${x.value}> `).join(', ')
-  await queryQueue.add(async () => {
-    console.log(`Fetching labels for ${terms.length} entities`)
-    const result = await source.client.query.construct(`
+
+  if (terms.length){
+    await queryQueue.add(async () => {
+      console.log(`Fetching labels for ${terms.length} entities`)
+      const result = await source.client.query.construct(`
 CONSTRUCT {
       ?uri <http://schema.org/name> ?label .
     } where {
       ?uri <http://schema.org/name> ?label
       FILTER (?uri IN (${uris}))
 }`)
-    view.dataset.addAll(result)
-    callback(view)
-  })
+      view.dataset.addAll(result)
+      callback(view)
+    })
+  }
 }
 
 async function fetchObservationsAndLabels (view) {
