@@ -13,7 +13,7 @@ import DimensionFilters from './DimensionFilters.vue'
 import DimensionMetadata from './DimensionMetadata.vue'
 import ScaleTypeIcon from './ScaleTypeIcon.vue'
 
-const emit = defineEmits(['updateSort','updateFilters'])
+const emit = defineEmits(['updateSort', 'updateFilters'])
 
 const props = defineProps({
   dimension: {
@@ -23,6 +23,9 @@ const props = defineProps({
   viewDimension: {
     type: Object,
     required: true
+  },
+  label: {
+    type: Object,
   },
   sortDimension: {
     type: Object,
@@ -41,8 +44,6 @@ const {
   filtersOfDimension
 } = viewStore
 
-
-const label = computed(() => props.dimension.ptr.out(ns.schema.name, { language: langStore.language }).value)
 const description = computed(() => props.dimension.ptr.out(ns.schema.comment, { language: langStore.language }).value)
 const property = computed(() => props.dimension.ptr.out(ns.sh.path).value)
 const isMeasure = computed(() => !!props.dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term)
@@ -78,11 +79,15 @@ function toggleDirection (direction) {
         :title="property"
         @click="updateSort"
       >
-        <span v-if="label">{{ label }}</span>
+        <template v-if="label">
+          <span class="text-gray-500" v-if="label.joined"><i>{{ label.value }}</i></span>
+          <span v-else>{{ label.value }}</span>
+        </template>
+
         <span v-else class="text-gray-500">Untitled</span>
         <span v-if="isSortDimension" class="pt-1">
-          <chevron-down-icon v-if="isSortAscending" class="w-5 h-5" />
-          <chevron-up-icon v-if="isSortDescending" class="w-5 h-5" />
+          <chevron-down-icon v-if="isSortAscending" class="w-5 h-5"/>
+          <chevron-up-icon v-if="isSortDescending" class="w-5 h-5"/>
         </span>
       </button>
       <popover class="relative">
@@ -100,15 +105,15 @@ function toggleDirection (direction) {
       </popover>
     </div>
     <div class="flex items-center gap-1">
-      <scale-type-icon :scale-of-measure="scaleType" />
-      <data-kind-icon :data-kind="dataKind" />
+      <scale-type-icon :scale-of-measure="scaleType"/>
+      <data-kind-icon :data-kind="dataKind"/>
       <span v-if="description" class="tag" :title="description">
-        <annotation-icon class="w-5 h-5" />
+        <annotation-icon class="w-5 h-5"/>
       </span>
       <span v-if="isShared" class="tag" title="Linked to shared dimension">
-        <link-icon class="w-5 h-5" />
+        <link-icon class="w-5 h-5"/>
       </span>
-      <dimension-metadata :dimension="dimension" />
+      <dimension-metadata :dimension="dimension"/>
     </div>
   </div>
 </template>

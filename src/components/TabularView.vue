@@ -1,4 +1,3 @@
-
 <script setup>
 /* eslint-disable */
 import { XCircleIcon } from '@heroicons/vue/outline'
@@ -17,6 +16,7 @@ import DimensionHeader from './DimensionHeader.vue'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import ObservationValue from './ObservationValue.vue'
 import PaginationMenu from './PaginationMenu.vue'
+import { getColumnHeaderLabel } from './common/columnHeaders.js'
 
 const emit = defineEmits(['updateDataset'])
 
@@ -87,7 +87,7 @@ const updateObservations = async () => {
         page: page.value,
         pageSize: pageSize.value,
         sortDimension: sortDimension.value,
-        sortDirection: sortDirection.value,
+        sortDirection: sortDirection.value
       }
     })
     await fetchObservationsAndLabels(v)
@@ -100,7 +100,7 @@ const fetchObservations = async (view) => {
   await queryQueue.add(async () => {
     try {
       observations.value = await Remote.fetch(view.observations.bind(view))
-    } catch (error){
+    } catch (error) {
       console.log(error)
       console.log('view that produced the error')
       console.log(getBoundedViewPointer(view).dataset.toString())
@@ -191,7 +191,10 @@ async function fetchObservationsAndLabels (view) {
 }
 
 async function fetchObservationsLabels (view) {
-  const terms = observationsTermsWithNoLabel({observations:observations.value, view})
+  const terms = observationsTermsWithNoLabel({
+    observations: observations.value,
+    view
+  })
   await populateLabels(view, [...terms], (view) => {
     currentView.value = view
     refreshObservations()
@@ -205,8 +208,9 @@ async function fetchObservationsLabels (view) {
  */
 
 const filtersSummary = ref([])
-function buildFiltersSummary(){
-  filtersSummary.value =  currentView.value.filters.map((currElement) => {
+
+function buildFiltersSummary () {
+  filtersSummary.value = currentView.value.filters.map((currElement) => {
     const {
       dimension,
       operation,
@@ -228,26 +232,31 @@ function buildFiltersSummary(){
     if (viewDimension) {
       const path = viewDimension.ptr.out(ns.view.from).out(ns.view.path).term
       const dimensionLabel = getDimensionLabel(path)
-      const filterLabel = langStore.getFilterLabel({ operation, arg, args, argsList })
+      const filterLabel = langStore.getFilterLabel({
+        operation,
+        arg,
+        args,
+        argsList
+      })
       return {
         filter: currElement,
         label: `${dimensionLabel} ${filterLabel}`
       }
     }
 
-  }).filter(notNull=>notNull)
+  }).filter(notNull => notNull)
 }
 
 function removeFilter ({
   filter
 }) {
-  viewStore.removeFilter({filter})
+  viewStore.removeFilter({ filter })
   page.value = 1
   buildFiltersSummary()
   updateObservations()
 }
 
-function updateFilters(){
+function updateFilters () {
   page.value = 1
   buildFiltersSummary()
   updateObservations()
@@ -270,7 +279,7 @@ function isMeasureDimension (dimension) {
   return !!dimension.ptr.has(ns.rdf.type, ns.cube.MeasureDimension).term
 }
 
-const dims = computed(() => getEffectiveDimensions({view:currentView.value}))
+const dims = computed(() => getEffectiveDimensions({ view: currentView.value }))
 
 </script>
 
@@ -286,8 +295,8 @@ const dims = computed(() => getEffectiveDimensions({view:currentView.value}))
               class="border border-b-2 align-top text-left h-full">
             <dimension-header
               :dimension="cubeDimension"
+              :label="getColumnHeaderLabel({dimension:cubeDimension,viewDimension:viewDimension,view:currentView},{language})"
               :view-dimension="viewDimension"
-              :language="language"
               :sort-dimension="sortDimension"
               :sort-direction="sortDirection"
               @updateSort="updateSort"

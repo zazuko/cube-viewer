@@ -1,23 +1,24 @@
 /* eslint-disable */
 
 import rdf from 'rdf-ext'
+
 const viewAsNN = rdf.namedNode('https://cube.link/view/as')
+const viewFrom = rdf.namedNode('https://cube.link/view/from')
 
 function toViewDimension ({
-  view, cubeDimension,
+  view,
+  cubeDimension
 }) {
   const result = view.dimension({ cubeDimension })
   if (!result) {
-    const cubeDimensionTerm = cubeDimension.ptr
-      ? cubeDimension.ptr.term
-      : cubeDimension
+    const cubeDimensionTerm = cubeDimension.ptr ? cubeDimension.ptr.term : cubeDimension
     for (const dimension of view.dimensions) {
       const viewAs = dimension.ptr.out(viewAsNN).term
       if (viewAs && viewAs.equals(cubeDimensionTerm)) {
         return dimension
       }
     }
-    console.log(`No dimension found for`,cubeDimensionTerm.value)
+    console.log(`No dimension found for`, cubeDimensionTerm.value)
   }
   return result
 }
@@ -29,14 +30,14 @@ function cubeDimensionsWithFallBack ({ dimension }) {
     return result
   }
 
-  const cubeDimensions = dimension.ptr.out(view.from).terms
+  const cubeDimensions = dimension.ptr.out(viewFrom).terms
   return cubeDimensions.map(term => ({
     term: term,
     ptr: dimension.ptr.node(term),
-    path: dimension.ptr.out(view.as).term,
+    path: dimension.ptr.out(viewAsNN).term,
     dataset: dimension.dataset,
     graph: dimension.graph,
-    in: [],
+    in: []
   }))
 }
 
