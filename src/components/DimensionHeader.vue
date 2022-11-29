@@ -25,7 +25,7 @@ const props = defineProps({
     required: true
   },
   label: {
-    type: Object,
+    type: Object
   },
   sortDimension: {
     type: Object,
@@ -67,6 +67,16 @@ function toggleDirection (direction) {
     return ns.view.Ascending
   }
 }
+
+const metadataTitle = computed(() => {
+  const dimensionIdentifier = props.viewDimension.ptr.out(ns.schema.identifier).value
+  if (dimensionIdentifier) {
+    return `Metadata for ${dimensionIdentifier}`
+  } else {
+    return 'Dimension metadata'
+  }
+})
+
 
 </script>
 
@@ -113,7 +123,7 @@ function toggleDirection (direction) {
       <span v-if="isShared" class="tag" title="Linked to shared dimension">
         <link-icon class="w-5 h-5"/>
       </span>
-      <dimension-metadata :dimension="dimension"/>
+      <dimension-metadata :metadata-title="metadataTitle" :dimension="dimension"/>
     </div>
   </div>
 </template>
