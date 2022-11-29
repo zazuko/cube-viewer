@@ -27,7 +27,7 @@ function getColumnHeaderLabel ({
       const joinLabel = getLabel(cubeDimensions[0].ptr, { language })
       return {
         value: joinLabel.value,
-        joined: true
+        joined: cubeDimensions[0].ptr.term
       }
     }
   }

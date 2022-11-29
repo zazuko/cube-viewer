@@ -18,6 +18,13 @@ function toViewDimension ({
         return dimension
       }
     }
+    // If there is no view dimension using viewAs try viewFrom
+    for (const dimension of view.dimensions) {
+      const viewFromTerm = dimension.ptr.out(viewFrom).term
+      if (viewFromTerm && viewFromTerm.equals(cubeDimensionTerm)) {
+        return dimension
+      }
+    }
     console.log(`No dimension found for`, cubeDimensionTerm.value)
   }
   return result
