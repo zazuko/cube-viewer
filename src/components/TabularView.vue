@@ -169,7 +169,7 @@ async function fetchShaclLabels (view) {
 
 async function populateLabels (view, terms, callback) {
   const source = view.getMainSource()
-  const uris = terms.map(x => `<${x.value}> `).join(', ')
+  const uris = terms.map(x => `<${x.value}> `).join(' ')
 
   if (terms.length){
     await queryQueue.add(async () => {
@@ -179,7 +179,7 @@ CONSTRUCT {
       ?uri <http://schema.org/name> ?label .
     } where {
       ?uri <http://schema.org/name> ?label
-      FILTER (?uri IN (${uris}))
+      VALUES ?uri { ${uris} }
 }`)
       view.dataset.addAll(result)
       callback(view)

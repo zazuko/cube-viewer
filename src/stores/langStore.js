@@ -94,7 +94,7 @@ function observationsTermsWithNoLabel ({
 
   for (const row of observations?.data ?? []) {
     for (const [cubePathStr, value] of Object.entries(row)) {
-      if (value.termType === 'NamedNode' && !isLabelDimensionTarget({
+      if (value && value.termType === 'NamedNode' && !isLabelDimensionTarget({
         cubePathStr,
         view
       })) {
