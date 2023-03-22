@@ -1,0 +1,2 @@
+(self["webpackChunkcube_viewer"]=self["webpackChunkcube_viewer"]||[]).push([[650],{60650:function(e,s,c){const n=c(83932),t=c(61605);class u extends t{constructor(){super(n)}}e.exports=u},83932:function(e,s,c){const n=c(76083).quadToNTriples,t=c(96650);class u extends t{constructor(e){super(e,{map:e=>n(e)+"\n"})}}e.exports=u}}]);
+//# sourceMappingURL=650.04f2b15d.js.map
