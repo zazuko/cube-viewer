@@ -7,7 +7,6 @@
     {{ cubes.error }}
   </div>
   <select v-else :value="cubeUri" @change="onSelect">
-    <option>Select cube</option>
     <option v-for="cube in cubes.data" :key="cube.term.value" :value="cube.term.value">
       {{ cube.term.value }}
     </option>

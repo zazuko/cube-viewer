@@ -1,99 +1,143 @@
+<script setup>
+/* eslint-disable */
+import { computed, defineEmits, defineProps, onMounted, ref } from 'vue'
+import { operations } from '../model/operation.js'
+import useLangStore from '../stores/langStore.js'
+import SelectBox from './SelectBox.vue'
+import TermInput from './TermInput.vue'
+import SelectBoxMultiple from './SelectBoxMultiple.vue'
+
+import TermDisplay from './TermDisplay.vue'
+
+const emit = defineEmits(['updateFilter'])
+
+const props = defineProps({
+  dimension: {
+    type: Object,
+    required: true
+  },
+  viewDimension: {
+    type: Object,
+    required: true
+  },
+  filterWrapper: {
+    type: Object,
+    required: true
+  }
+})
+
+const langStore = useLangStore()
+const {
+  getDisplayTerm
+} = langStore
+
+const validOperations = ref([])
+const currentOperation = ref()
+const args = ref([])
+const exceptionLabel = ref()
+
+function updateOperation (operation) {
+  currentOperation.value = operation
+  args.value = []
+}
+
+function updateArg ({ term }) {
+  args.value = [term]
+  currentArg.value = term
+  tryUpdate()
+}
+
+function updateArgs ({ terms }) {
+  args.value = terms
+  tryUpdate()
+}
+
+function tryUpdate () {
+  if ((args.value.length) && currentOperation.value) {
+    emit('updateFilter', {
+      dimension: props.viewDimension,
+      operation: currentOperation.value.term,
+      args: args.value
+    })
+  }
+}
+
+onMounted(() => {
+
+  validOperations.value = operations.filter(x => x.onlyLiterals ? !isNamed.value : true)
+  const {
+    filter,
+    readOnly
+  } = props.filterWrapper
+
+  if (readOnly) {
+    exceptionLabel.value = readOnly // Used to handle the cases we haven't seen yet
+  } else if (filter) {
+    currentOperation.value = operations.find(x => x.term.equals(filter.operation))
+    args.value = filter.args
+  }
+})
+
+const isNamed = computed(() => props.dimension.in && props.dimension.in.length > 0)
+
+const currentArg = ref()
+</script>
+
 <template>
   <fieldset class="flex items-center gap-2">
-    <SelectBox :modelValue="filter.operation" @update:modelValue="updateOperation" :options="operations">
-      <template v-slot:button="{ selected }">
-        <span v-if="selected" :term="selected.term">{{ selected.label }}</span>
-        <span v-else class="text-gray-500">Operation</span>
+    <template v-if="filterWrapper.readOnly">{{ exceptionLabel }}</template>
+    <template v-else>
+
+      <SelectBox :modelValue="currentOperation" @update:modelValue="updateOperation" :options="validOperations">
+        <template v-slot:button="{ selected }">
+          <span v-if="selected" :term="selected.term">{{ selected.label }}</span>
+          <span v-else class="text-gray-500">Operation</span>
+        </template>
+      </SelectBox>
+
+      <template v-if="currentOperation">
+        <!--        MULTIPLE_NAMED-->
+        <template v-if="isNamed && currentOperation.multipleValues">
+          <SelectBoxMultiple :modelValue="args"
+                             @update:modelValue="(terms)=>updateArgs({terms})"
+                             :options="dimension.in">
+            <template v-slot:button="{ selected }">
+              <template v-if="selected">
+                <span v-if="selected.length===0" class="text-gray-500">select</span>
+                <term-display v-else-if="selected.length===1" :term="getDisplayTerm(selected[0])"/>
+                <span v-else class="text-gray-500">({{ selected.length }}) items</span>
+              </template>
+              <span v-else class="text-gray-500">Value</span>
+            </template>
+            <template v-slot:option="{ option }">
+              <term-display :term="getDisplayTerm(option)"/>
+            </template>
+          </SelectBoxMultiple>
+        </template>
+        <template v-else-if="isNamed && !currentOperation.multipleValues">
+          <!--          SINGLE_NAMED-->
+          <SelectBox :modelValue="currentArg"
+                     @update:modelValue="(currentArg)=>updateArg({term:currentArg})"
+                     :options="dimension.in">
+            <template v-slot:button="{ selected }">
+              <term-display v-if="selected" :term="getDisplayTerm(selected)"/>
+              <span v-else class="text-gray-500">Value</span>
+            </template>
+            <template v-slot:option="{ option }">
+              <term-display :term="getDisplayTerm(option)"/>
+            </template>
+          </SelectBox>
+        </template>
+        <template v-if="!isNamed">
+          <term-input
+            placeholder="Value"
+            :modelValue="currentArg"
+            @update:modelValue="(currentArg)=>updateArg({term:currentArg})"
+            :datatype="dimension.datatype"
+          />
+        </template>
       </template>
-    </SelectBox>
-    <SelectBox v-if="dimension.in && dimension.in.length > 0" :modelValue="filter.arg" @update:modelValue="updateArg" :options="dimension.in">
-      <template v-slot:button="{ selected }">
-        <term-display v-if="selected" :term="resourceLabel(selected)" :base="cube.term.value" />
-        <span v-else class="text-gray-500">Value</span>
-      </template>
-      <template v-slot:option="{ option }">
-        <term-display :term="resourceLabel(option)" :base="cube.term.value" />
-      </template>
-    </SelectBox>
-    <div v-else>
-      <term-input
-        placeholder="Value"
-        :modelValue="filter.arg"
-        @update:modelValue="updateArg"
-        :datatype="dimension.datatype"
-      />
-    </div>
+
+    </template>
   </fieldset>
 </template>
-
-<script>
-import { defineComponent } from 'vue'
-import { Cube, CubeDimension } from 'rdf-cube-view-query'
-import SelectBox from './SelectBox.vue'
-import TermDisplay from './TermDisplay.vue'
-import TermInput from './TermInput.vue'
-import * as ns from '../namespace'
-
-const operations = [
-  { term: ns.view.Eq, label: '=' },
-  { term: ns.view.Ne, label: '!=' },
-  { term: ns.view.In, label: 'in' },
-  { term: ns.view.Lt, label: '<' },
-  { term: ns.view.Lte, label: '<=' },
-  { term: ns.view.Gt, label: '>' },
-  { term: ns.view.Gte, label: '>=' },
-]
-
-export default defineComponent({
-  name: 'DimensionFilters',
-  components: { SelectBox, TermDisplay, TermInput },
-  props: {
-    cube: {
-      type: Cube,
-      required: true,
-    },
-    dimension: {
-      type: CubeDimension,
-      required: true,
-    },
-    filter: {
-      type: Object,
-      required: true,
-    },
-    labels: {
-      type: Object,
-      required: false,
-    },
-    language: {
-      type: [String, Array],
-      required: false,
-    },
-  },
-  emits: ['update:filter'],
-
-  computed: {
-    operations () {
-      // TODO: Filter based on dimension
-      return operations
-    },
-  },
-
-  methods: {
-    updateOperation (operation) {
-      this.$emit('update:filter', { ...this.filter, operation })
-    },
-
-    updateArg (arg) {
-      this.$emit('update:filter', { ...this.filter, arg })
-    },
-
-    resourceLabel (term) {
-      return (
-        this.labels?.node(term).out(ns.schema.name, { language: this.language }).term ||
-        this.cube.ptr.node(term).out(ns.schema.name, { language: this.language }).term ||
-        term
-      )
-    },
-  },
-})
-</script>

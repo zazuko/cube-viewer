@@ -14,11 +14,11 @@
     <table v-else>
       <tr v-for="([predicate, objects], index) in properties" :key="index" class="align-top">
         <td class="py-2 pr-4 font-semibold">
-          <term-display :term="predicate" :base="cube.term.value" />
+          <term-display :term="predicate" :base="pointer.term.value" />
         </td>
         <td class="py-2 flex flex-col gap-1">
           <p v-for="(object, objectIndex) in objects" :key="objectIndex">
-            <observation-value :value="object" :cube="cube" />
+            <observation-value :value="object" :pointer="pointer" />
           </p>
         </td>
       </tr>
@@ -31,7 +31,6 @@ import { defineAsyncComponent, defineComponent, ref, toRefs, onMounted, watch } 
 import { ExternalLinkIcon } from '@heroicons/vue/solid'
 import { Term } from '@rdfjs/data-model'
 import formats from '@rdfjs/formats-common'
-import { Cube } from 'rdf-cube-view-query'
 import RDF from 'rdf-ext'
 import LoadingIcon from './icons/LoadingIcon.vue'
 import TermDisplay from './TermDisplay.vue'
@@ -52,8 +51,8 @@ export default defineComponent({
       type: Term,
       required: true,
     },
-    cube: {
-      type: Cube,
+    pointer: {
+      type: Object,
       required: true,
     },
   },

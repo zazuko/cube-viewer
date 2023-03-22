@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
   <div class="flex items-center gap-8">
     <div class="flex items-center gap-1">
@@ -16,11 +17,10 @@
         <exclamation-circle-icon class="w-5 h-5" />
       </span>
       <span v-else>{{ pagesCount }}</span>
-
-      <button @click="updatePage(page + 1)" title="Next page" class="button px-2">
+      <button @click="updatePage(page + 1)" title="Next page" class="button px-2" :disabled="!pagesCount || page >= pagesCount">
         <chevron-right-icon class="w-6 h-6" />
       </button>
-      <button @click="updatePage(pagesCount)" title="Last page" class="button px-2" :disabled="!pagesCount || page === pagesCount">
+      <button @click="updatePage(pagesCount)" title="Last page" class="button px-2" :disabled="!pagesCount || page >= pagesCount">
         <chevron-double-right-icon class="w-6 h-6" />
       </button>
     </div>
@@ -36,6 +36,7 @@ import { computed, defineComponent, toRefs } from 'vue'
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/solid'
 import { ExclamationCircleIcon } from '@heroicons/vue/outline'
 import LoadingIcon from './icons/LoadingIcon.vue'
+import { DEFAULT_PAGE_SIZE } from './common/projection.js'
 
 const pageSizes = ['10', '20', '50', '100']
 
@@ -45,11 +46,11 @@ export default defineComponent({
   props: {
     page: {
       type: Number,
-      required: true,
+      default: 0,
     },
     pageSize: {
       type: Number,
-      required: true,
+      default: DEFAULT_PAGE_SIZE,
     },
     itemsCount: {
       // type: Remote<Number>,

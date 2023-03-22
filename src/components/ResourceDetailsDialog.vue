@@ -51,7 +51,7 @@ export default defineComponent({
       type: String,
       required: true,
     },
-    resource: {
+    pointer: {
       type: Clownface,
       required: true,
     },
@@ -64,7 +64,7 @@ export default defineComponent({
 
   computed: {
     properties () {
-      const pointer = this.resource
+      const pointer = this.pointer
       const predicates = RDF.termSet([...pointer.dataset.match(pointer.term)].map(({ predicate }) => predicate))
 
       return [...predicates].map(predicate => [predicate, pointer.out(predicate).terms])
